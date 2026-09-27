@@ -68,17 +68,35 @@ which one answered: `LIVE VLM` or `RULE-BASED`.
 cp .env.example .env     # Windows: copy .env.example .env
 ```
 
-Then set one provider and its key in `.env`:
+Then set **one** provider and its key in `.env`: only `VLM_PROVIDER` and `GROQ_API_KEY` are required for the Groq path:
 
-| Provider | `VLM_PROVIDER` | Key | Notes |
+| Provider | `VLM_PROVIDER` | Key (env var / Vercel) | Notes |
 | --- | --- | --- | --- |
-| **Groq** | `groq` | `GROQ_API_KEY` | Recommended. Free tier, very fast, accepts images. Key: <https://console.groq.com/keys> |
-| **Google Gemini** | `gemini` | `GEMINI_API_KEY` | Free tier, multimodal. Key: <https://aistudio.google.com/apikey> |
-| **Local LLaVA** | `local` | *(none)* | Self-hosted behind Ollama/vLLM — the stack named in our deck. Needs a GPU |
-| Any OpenAI-compatible | `openai` / `openrouter` | per provider | Point `VLM_BASE_URL` at your gateway |
+| **Groq** (recommended) | `groq` | `GROQ_API_KEY` → `GROQ_API_KEY` on Vercel | Free tier, very fast, accepts images. Key: <https://console.groq.com/keys> |
+| **Google Gemini** | `gemini` | `GEMINI_API_KEY` → `GEMINI_API_KEY` on Vercel | Free tier, multimodal. Key: <https://aistudio.google.com/apikey> |
+| **Local LLaVA** | `local` | *(none)* | Self-hosted behind Ollama/vLLM. Needs a GPU |
+| Any OpenAI-compatible | `openai` / `openrouter` | `OPENAI_API_KEY` / `OPENROUTER_API_KEY` → their Vercel names | Point `VLM_BASE_URL` at your gateway |
 
-Restart `npm run serve` afterwards. The browser never sees the key: the request is proxied by
-`scripts/serve.mjs`, which plays the FastAPI role from the architecture diagram.
+Restart the app afterwards. The browser never sees the key: the request is proxied server-side.
+`.env` is git-ignored and **never committed**.
+
+> **Use the Vercel proxy instead of `scripts/serve.mjs`.** In production, deploy this project to
+> Vercel with this layout at the **project root**::
+
+```bash
+.
+├── api/
+│   └── route.js          # Vercel serverless proxy (GET /api/status, POST /api/route)
+├── css/, data/, index.html, js/, scripts/
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
+`api/route.js` is the **exact same logic** as `scripts/serve.mjs` — it imports the host-agnostic
+`scripts/proxy-core.mjs` and exposes a Vercel handler. The browser's `fetch("/api/status")` and
+`fetch("/api/route")` target `api/route.js` on Vercel, and your key lives in Vercel's environment
+stores, never in the repo.
 
 > **Model availability changes.** If your key has no vision model, list what it does have and set
 > `VLM_MODEL` accordingly:
@@ -210,14 +228,18 @@ https://<your-username>.github.io/<your-repo>/
 ### Option B — Vercel (full experience, free Hobby tier)
 
 Vercel runs the proxy as a serverless function, so the live model works on a real URL.
-Connect <https://vercel.com> to your GitHub repository, then add your key under
-**Project → Settings → Environment Variables** as `GROQ_API_KEY` (and optionally `VLM_PROVIDER=groq`,
-`VLM_MODEL=...`), and deploy.
+Connect <https://vercel.com> to your GitHub repository. Add these variables under
+**Project → Settings → Environment Variables** and deploy:
 
-One structural change is needed: Vercel expects the proxy as a function rather than a long-running
-process, so `scripts/serve.mjs` must be split into an `api/` route. The logic is already isolated —
-`resolveConfig()`, `buildPrompt()`, `sanitise()` and the provider callers are self-contained and can
-be reused verbatim in an `api/route.js` handler.
+| Variable | Value |
+| --- | --- |
+| `VLM_PROVIDER` | `groq` |
+| `GROQ_API_KEY` | your key from <https://console.groq.com/keys> |
+| `VLM_MODEL` | `qwen/qwen3.8-27b` (optional; only vision-capable models work) |
+| `VLM_SEND_IMAGES` | `1` |
+
+The Groq key is injected by Vercel into `process.env` at runtime — it is never stored in the
+repository, and **never uploaded to GitHub**.
 
 Either way, judge the demo from a local `npm run serve` if you want zero risk from conference wifi —
 it has everything and needs no network beyond the free tile services.
@@ -231,7 +253,9 @@ index.html                  the whole UI
 css/styles.css              neobrutalist design system (softened corners, hard shadows)
 js/app.js                   map, AOI tools, layers, chat, swipe comparison, VLM client
 js/query-engine.js          rule engine + grounded demo regions (the fallback)
-scripts/serve.mjs           static server + /api/route vision-language proxy
+scripts/serve.mjs           local dev server + /api/route vision-language proxy
+scripts/proxy-core.mjs      host-agnostic proxy logic (no Node-http)
+api/route.js                Vercel serverless proxy (GET /api/status, POST /api/route)
 scripts/collect-data.mjs    free public data collector
 scripts/verify.mjs          37-check headless browser test suite
 data/samples/               collected imagery
