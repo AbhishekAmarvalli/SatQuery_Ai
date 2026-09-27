@@ -1,0 +1,419 @@
+SATQUERY AI — LLM-READABLE PRESENTATION
+
+SOURCE
+File: SIH2026,PPT.pptx
+Slides: 6
+This is a transcription of the supplied presentation. Technical claims, comparisons and examples are retained as source claims, not independently verified facts.
+
+PROJECT METADATA
+Project name: SATQUERY AI
+Event: SMART INDIA HACKATHON 2026
+Problem statement id: SIH26167
+Problem statement title: Interactive Vision-Language Assistant for Multimodal Remote Sensing Image Analysis through Text Queries
+Theme: Space Technology
+Category: Software
+Team id: 122085
+Team name: OrbitMinds
+
+EXTRACTION NOTES
+- Slide order is preserved. Whitespace and line wrapping are normalized.
+- Branding images, decorative icons, repeated template footers and page-number labels are omitted.
+- Editable text is in text_blocks. Manually transcribed embedded image content is in embedded_visuals.
+- Missing reference and live-demo URLs are null. No URLs have been added.
+- The source names the project SATQUERY AI but labels its comparison-table column GEOCHAT (Ours). Both labels are preserved.
+- Model names and roles, including GEOCHAT, LLaVA and CLIP-BLIP, are preserved as presented. This conversion does not resolve relationships or technical ambiguities between them.
+- No additional project details from other conversations or external sources are included.
+
+SLIDE 1: SATQUERY AI
+
+SMART INDIA HACKATHON 2026
+
+Slide text:
+- Problem Statement ID – SIH26167
+- Problem Statement Title- Interactive Vision-Language Assistant for Multimodal Remote Sensing Image Analysis through Text Queries
+- Theme- Space Technology
+- PS Category- Software
+- Team ID- 122085
+- Team Name (Registered on portal) – OrbitMinds
+
+SLIDE 2: SATQUERY AI
+
+Proposed Solution
+
+Slide text:
+- Multimodal Input: Supports Optical, SAR, and Thermal remote-sensing imagery.
+- Natural-Language Queries: Users can ask questions about satellite imagery using
+- simple text.
+- AI-Powered Analysis: A Vision-Language Model (LLaVA) interprets both the user’s
+- query and satellite image content.
+- Geospatial Grounding: SAM / CLIP-BLIP components connect the AI's response to
+- specific regions in the image.
+- Interactive Map Output: Results are displayed on a React + Leaflet/OpenLayers
+- interface with relevant areas highlighted.
+- Geospatial Backend: FastAPI + PostgreSQL/PostGIS manages queries, imagery and
+- spatial results.
+- Key Innovation: Combines Vision-Language AI + multimodal remote sensing
+- + geospatial grounding in one query-driven workflow
+
+Embedded diagrams and tables:
+-
+  Source images:
+    - ppt/media/image3.png
+  Type: workflow
+  Title: SATQUERY AI — System Architecture / Workflow
+  Steps:
+    - Step number: 1
+      Label: User Query (Natural Language)
+      Example query: Show areas affected by flooding in this region
+    - Step number: 2
+      Label: Multimodal Satellite Data
+      Modalities:
+        - Optical
+        - SAR
+        - Thermal
+    - Step number: 3
+      Label: Vision-Language AI Analysis (LLaVA)
+      Input: Image + Query (Multimodal Input)
+      Description: Understands query and interprets image content
+    - Step number: 4
+      Label: Geospatial Grounding (SAM / CLIP-BLIP)
+      Input: Input Image
+      Description: Detects and links relevant regions
+      Output: Detected Regions (Mask)
+    - Step number: 5
+      Label: Backend & Geospatial Database (FastAPI + PostgreSQL/PostGIS)
+      Components:
+        - Name: FastAPI
+          Responsibilities:
+            - Handles user requests
+            - Orchestrates AI models
+            - Processes spatial results
+        - Name: PostgreSQL + PostGIS
+          Responsibilities:
+            - Stores satellite imagery
+            - Manages geospatial data
+            - Handles spatial queries
+      Relationship: FastAPI and PostgreSQL + PostGIS are connected by a bidirectional arrow.
+    - Step number: 6
+      Label: Interactive Map Output (React + Leaflet / OpenLayers)
+      Features:
+        - Display results on interactive map
+        - Highlight relevant areas
+        - Show AI-generated insights
+        - Allow zoom, pan and layer selection
+    - Step number: 7
+      Label: Final Output
+      Application label: SatQuery AI
+      Example query: Show areas affected by flooding in this region
+      Example answer: The highlighted areas (in red) indicate regions affected by flooding based on the analysis of optical, SAR and thermal data.
+      Map description: Satellite map with red highlighted regions, zoom controls, a layer control and a 2 km scale bar.
+  Flow order:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+
+SLIDE 3: TECHNICAL APPROACH
+
+
+Slide text:
+- Input: Optical, SAR & Thermal satellite imagery + natural-language query.
+- AI Analysis: LLaVA processes the image and understands the user's query.
+- Geospatial Grounding: SAM / CLIP-BLIP identifies and localizes relevant regions.
+- Backend Processing: FastAPI + PostgreSQL/PostGIS manages AI, imagery & spatial data.
+- Interactive Output: React + Leaflet/OpenLayers displays highlighted regions and AI-generated insights.
+
+Embedded diagrams and tables:
+-
+  Source images:
+    - ppt/media/image4.png
+  Type: technology_stack
+  Title: Technology Stack
+  Components:
+    - Name: Python
+      Role as stated: Backend & AI
+    - Name: FastAPI
+      Role as stated: API Framework
+    - Name: React
+      Role as stated: Frontend
+    - Name: Leaflet
+      Role as stated: Mapping Library
+    - Name: OpenLayers
+      Role as stated: Mapping Library
+    - Name: GEOCHAT
+      Role as stated: Chat Model
+    - Name: LLaVA
+      Role as stated: Vision-Language
+    - Name: SAM
+      Role as stated: Image Segmentation
+    - Name: CLIP-BLIP
+      Role as stated: Vision-Text Alignment
+    - Name: PostgreSQL
+      Role as stated: Database
+    - Name: PostGIS
+      Role as stated: Geospatial Data
+-
+  Source images:
+    - ppt/media/image5.png
+  Type: workflow
+  Title: [not provided]
+  Steps:
+    - Step number: 1
+      Label: Multimodal Input
+      Description: Optical, SAR & Thermal satellite imagery + natural-language query.
+    - Step number: 2
+      Label: GEOCHAT (LLaVA)
+      Description: LLaVA processes the image and understands the user's query.
+      Example query: Which areas are affected by flooding in this region?
+    - Step number: 3
+      Label: SAM / CLIP-BLIP
+      Description: Identifies and localizes relevant regions.
+      Output: Detected Regions (Mask)
+    - Step number: 4
+      Label: FastAPI + PostgreSQL/PostGIS
+      Description: Manages AI, imagery & spatial data.
+      Relationship: PostgreSQL (PostGIS) and Spatial Data Management are connected by a bidirectional arrow.
+    - Step number: 5
+      Label: React + Leaflet/OpenLayers
+      Description: Displays highlighted regions and AI-generated insights.
+  Flow order:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+-
+  Source images:
+    - ppt/media/image6.png
+  Type: example_result
+  Title: Working Prototype / Example Result
+  User query: Which areas are affected by flooding in this region?
+  Analysis label: AI Analysis (GEOCHAT + LLaVA + SAM)
+  Analysis claims:
+    - Analyzes optical, SAR and thermal data.
+    - Identifies flood-affected regions using LLaVA + SAM / CLIP-BLIP.
+    - Generates geospatial insights.
+  Output label: Interactive Map Output (React + Leaflet/OpenLayers)
+  Map legend:
+    Red: Flooded Area
+  Map controls:
+    - Zoom in
+    - Zoom out
+    - Layers
+  Scale bar: 2 km
+  Evidence status: Static example shown in the slide; runtime behavior is not established by this extraction.
+
+SLIDE 4: FEASIBILITY AND VIABILITY
+
+
+Slide text:
+- Technical Feasibility: Uses existing AI/remote-sensing technologies such as LLaVA, SAM/CLIP-BLIP, FastAPI and PostGIS, making implementation practical.
+- Data Feasibility: Supports readily available Optical, SAR and Thermal satellite imagery with geospatial metadata.
+- Scalability: Modular architecture allows additional satellite sensors, AI models and GIS layers to be integrated later.
+- Cost & Deployment: Can be developed using open-source frameworks and cloud/GPU infrastructure, reducing development cost.
+- Practical Viability: Natural-language interaction and location-grounded visual results can support applications in disaster monitoring, urban planning, agriculture and environmental analysis.
+- Sustainability: The same platform can be reused for multiple geospatial use cases without redesigning the complete system.
+
+Embedded diagrams and tables:
+-
+  Source images:
+    - ppt/media/image7.png
+  Type: qualitative_quadrant_diagram
+  Title: [not provided]
+  Axes:
+    Horizontal left: Technical
+    Horizontal right: Operational
+    Vertical top: Scalable
+    Vertical bottom: Limited
+  Quadrants:
+    - Position: top_left
+      Label: Technical Feasibility
+      Description: Practical implementation using existing technologies.
+    - Position: top_right
+      Label: Scalability
+      Description: Modular architecture supports future expansion.
+    - Position: bottom_left
+      Label: Data Feasibility
+      Description: Readily available imagery with metadata.
+    - Position: bottom_right
+      Label: Practical Viability
+      Description: Supports diverse real-world applications.
+-
+  Source images:
+    - ppt/media/image8.png
+  Type: challenge_mitigation_table_and_workflow
+  Title: Key Challenges and Mitigation Strategies
+  Challenge mitigation pairs:
+    - Challenge: Large satellite images and high data volume
+      Mitigation: Use image tiling / sliding-window inference for efficient processing.
+    - Challenge: High computational requirements
+      Mitigation: Use model quantisation and optimized inference on GPU/cloud infrastructure.
+    - Challenge: Different characteristics of Optical, SAR and Thermal data
+      Mitigation: Apply modality-specific preprocessing and fine-tuning.
+    - Challenge: AI interpretation and grounding accuracy
+      Mitigation: Use SAM / CLIP-BLIP to verify and localize relevant regions.
+  Workflow title: Prototype Validation and Deployment
+  Workflow steps in order:
+    - Input Data (Optical / SAR / Thermal)
+    - AI Analysis (LLaVA)
+    - Geospatial Grounding (SAM / CLIP-BLIP)
+    - Map Result (Highlighted Regions)
+    - Human Validation & Deployment
+
+SLIDE 5: IMPACT AND BENEFITS
+
+
+Slide text:
+- Faster Decision-Making: Converts complex satellite imagery into quick, understandable, location-based insights.
+- For Government & Agencies: Supports disaster management, urban planning and infrastructure monitoring.
+- Environmental Impact: Helps monitor temperature hotspots, land-use changes, vegetation and environmental risks.
+- Economic Benefits: Reduces dependence on manual satellite-image analysis, saving time and operational effort.
+- Accessible Technology: Natural-language queries make remote-sensing analysis easier for non-experts.
+- Scalable Impact: One platform can support multiple domains such as agriculture, disaster response, environment and smart cities.
+
+Embedded diagrams and tables:
+-
+  Source images:
+    - ppt/media/image9.png
+    - ppt/media/image10.png
+  Type: benefits_and_target_audiences
+  Title: [not provided]
+  Transcription note: The six benefit labels appear in both embedded images and are listed once. The target-audience section appears in image10.png.
+  Benefits:
+    - Label: Scalable Impact
+      Description: Supports multiple domains like agriculture and smart cities
+    - Label: Faster Decision-Making
+      Description: Converts complex imagery into quick insights
+    - Label: Accessible Technology
+      Description: Enables non-experts to use remote sensing
+    - Label: Government Support
+      Description: Aids in disaster management and urban planning
+    - Label: Economic Benefits
+      Description: Reduces manual analysis and saves time
+    - Label: Environmental Impact
+      Description: Monitors temperature hotspots and land use
+  Target audiences title: Potential Impact on Target Audience
+  Target audiences:
+    - Audience: Disaster Response Teams
+      Benefit: Faster flood mapping and damage assessment for emergency planning and resource allocation.
+    - Audience: Agriculture & Farmers
+      Benefit: Supports crop-health and drought-stress monitoring using Optical and Thermal imagery.
+    - Audience: Urban Planners & Authorities
+      Benefit: Enables quick analysis of urban expansion, infrastructure and land-use changes.
+    - Audience: Researchers & Remote-Sensing Analysts
+      Benefit: Simplifies access to complex Optical, SAR and Thermal imagery through natural-language queries.
+    - Audience: Decision Makers
+      Benefit: Provides location-grounded visual insights to support faster, data-driven decisions.
+
+SLIDE 6: RESEARCH AND REFERENCES
+
+
+Slide text:
+- GEOCHAT – Vision-Language Satellite Assistant Reference: LLaVA – Visual Instruction Tuning Link:
+- ChangeChat – Satellite Image Change Analysis. Reference: LLaVA – Visual Instruction Tuning Link:
+- Optical_SAR – Multimodal Remote-Sensing Analysis Reference: ESA Sentinel-1 (SAR) & Sentinel-2 (Optical) Link:
+- SAM – Region Segmentation / Grounding Link:
+- Live Demo: link
+
+Embedded diagrams and tables:
+-
+  Source images:
+    - ppt/media/image11.png
+  Type: comparison_table
+  Title: Comparison with Existing Systems
+  Claim status: Transcribed source claims; not independently verified.
+  Systems as labeled:
+    - GEOCHAT (Ours)
+    - ChatGPT (Vision)
+    - Bhuvan (ISRO)
+    - Traditional GIS Tools (e.g., QGIS, ArcGIS)
+  Symbol mapping:
+    Check mark: yes
+    Cross mark: no
+    Tilde with limited: limited
+  Rows:
+    - Feature: Optical Imagery Support
+      Values:
+        Geochat (ours): yes
+        Chatgpt (vision): yes
+        Bhuvan (isro): yes
+        Traditional gis tools (e.g., qgis, arcgis): yes
+    - Feature: SAR Imagery Support
+      Values:
+        Geochat (ours): yes
+        Chatgpt (vision): no
+        Bhuvan (isro): yes
+        Traditional gis tools (e.g., qgis, arcgis): yes
+    - Feature: Thermal Imagery Support
+      Values:
+        Geochat (ours): yes
+        Chatgpt (vision): no
+        Bhuvan (isro): yes
+        Traditional gis tools (e.g., qgis, arcgis): yes
+    - Feature: Natural-Language Query for Satellite Analysis
+      Values:
+        Geochat (ours): yes
+        Chatgpt (vision): yes
+        Bhuvan (isro): no
+        Traditional gis tools (e.g., qgis, arcgis): no
+    - Feature: AI-based Region Identification (SAM/CLIP)
+      Values:
+        Geochat (ours): yes
+        Chatgpt (vision): no
+        Bhuvan (isro): no
+        Traditional gis tools (e.g., qgis, arcgis): no
+    - Feature: Interactive Map Visualization
+      Values:
+        Geochat (ours): yes
+        Chatgpt (vision): limited
+        Bhuvan (isro): yes
+        Traditional gis tools (e.g., qgis, arcgis): yes
+    - Feature: Location-Grounded AI Answers
+      Values:
+        Geochat (ours): yes
+        Chatgpt (vision): no
+        Bhuvan (isro): no
+        Traditional gis tools (e.g., qgis, arcgis): no
+    - Feature: Multi-Domain Applications (Agriculture, Disaster, Urban, Environment)
+      Values:
+        Geochat (ours): yes
+        Chatgpt (vision): limited
+        Bhuvan (isro): yes
+        Traditional gis tools (e.g., qgis, arcgis): yes
+-
+  Source images:
+    - ppt/media/image12.png
+  Type: research_reference_diagram
+  Title: Research & References
+  Items:
+    - Name: SAM
+      Description: Region Segmentation and Grounding for identifying relevant regions within satellite imagery.
+    - Name: GEOCHAT
+      Description: Vision-Language Satellite Assistant for natural-language interaction with satellite imagery.
+    - Name: Optical_SAR
+      Description: Multimodal Remote-Sensing Analysis combining ESA Sentinel-1 and Sentinel-2 imagery.
+    - Name: ChangeChat
+      Description: Satellite Image Change Analysis using vision-language understanding to describe changes.
+
+Structured references:
+- Name: GEOCHAT
+  Description as stated: Vision-Language Satellite Assistant
+  Reference as stated: LLaVA – Visual Instruction Tuning
+  Url: [not provided]
+- Name: ChangeChat
+  Description as stated: Satellite Image Change Analysis.
+  Reference as stated: LLaVA – Visual Instruction Tuning
+  Url: [not provided]
+- Name: Optical_SAR
+  Description as stated: Multimodal Remote-Sensing Analysis
+  Reference as stated: ESA Sentinel-1 (SAR) & Sentinel-2 (Optical)
+  Url: [not provided]
+- Name: SAM
+  Description as stated: Region Segmentation / Grounding
+  Reference as stated: [not provided]
+  Url: [not provided]
+
+Live demo: [URL not provided]

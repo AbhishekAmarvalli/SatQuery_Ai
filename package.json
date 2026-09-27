@@ -1,0 +1,15 @@
+{
+  "name": "satquery-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SATQUERY AI — Vision-Language Assistant for Multimodal Remote Sensing Image Analysis (SIH26167, Team OrbitMinds)",
+  "type": "module",
+  "scripts": {
+    "serve": "node scripts/serve.mjs",
+    "collect": "node scripts/collect-data.mjs",
+    "verify": "node scripts/verify.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.11.1"
+  }
+}

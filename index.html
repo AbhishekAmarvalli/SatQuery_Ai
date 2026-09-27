@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SATQUERY AI — Vision-Language Assistant for Satellite Imagery | SIH26167</title>
+<meta name="description" content="SATQUERY AI (SatQuery): ask questions about satellite imagery in plain language. The assistant picks the right modality — Optical, Thermal or SAR — draws your AOI and returns location-grounded answers on an interactive map. Smart India Hackathon 2026, Team OrbitMinds." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%232563EB'/><circle cx='50' cy='50' r='26' fill='none' stroke='white' stroke-width='9'/><line x1='68' y1='68' x2='88' y2='88' stroke='white' stroke-width='12' stroke-linecap='round'/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="site-header">
+  <a class="brand" href="#top" aria-label="SATQUERY AI home">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 100 100" width="26" height="26"><circle cx="50" cy="50" r="27" fill="none" stroke="currentColor" stroke-width="10"/><line x1="69" y1="69" x2="90" y2="90" stroke="currentColor" stroke-width="13" stroke-linecap="round"/></svg>
+    </span>
+    <span class="brand-text">SATQUERY<b>AI</b></span>
+  </a>
+  <nav class="main-nav" aria-label="Primary">
+    <a href="#console">Console</a>
+    <a href="#pipeline">How it works</a>
+    <a href="#data">Data</a>
+    <a href="#compare">Compare</a>
+    <a href="#impact">Impact</a>
+  </nav>
+  <a class="btn btn-primary btn-sm header-cta" href="#console">Open console</a>
+</header>
+
+<main id="top">
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="hero-copy">
+    <div class="chip-row">
+      <span class="chip chip-blue">SIH26167</span>
+      <span class="chip chip-green">Space Technology</span>
+      <span class="chip chip-red">Team OrbitMinds · 122085</span>
+    </div>
+    <h1>Ask the sky.<br /><span class="hl-red">Get a map answer.</span></h1>
+    <p class="lead">
+      An interactive <b>vision-language assistant for multimodal remote sensing</b>.
+      Type a question in plain language — SatQuery reads your <b>Optical, Thermal &amp; SAR</b>
+      imagery, picks the right sensor, grounds the answer inside <b>your AOI</b> and highlights
+      the regions that matter on an interactive map.
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#console">Open the query console</a>
+      <a class="btn btn-ghost" href="#pipeline">See the architecture</a>
+    </div>
+    <ul class="stat-row" aria-label="Highlights">
+      <li><b>3</b><span>modalities routed by AI</span></li>
+      <li><b>4</b><span>free public datasets preloaded</span></li>
+      <li><b>0</b><span>API keys needed</span></li>
+      <li><b>∞</b><span>NL queries, no GIS training</span></li>
+    </ul>
+  </div>
+
+  <aside class="hero-card card" aria-label="How the assistant routes a query">
+    <div class="hero-card-head">
+      <span class="pulse-dot" aria-hidden="true"></span>
+      <span>Modality router · live</span>
+    </div>
+    <div class="route-demo">
+      <div class="route-query"><span class="mono">?</span> “what changed since 2017?”</div>
+      <div class="route-arrow" aria-hidden="true">▼</div>
+      <div class="route-map">
+        <div class="route-line"><span class="route-k">change · describe</span><span class="route-v v-green">OPTICAL</span></div>
+        <div class="route-line"><span class="route-k">flood · water</span><span class="route-v v-red">THERMAL</span></div>
+        <div class="route-line"><span class="route-k">night · radar</span><span class="route-v v-amber">SAR</span></div>
+      </div>
+      <div class="route-arrow" aria-hidden="true">▼</div>
+      <div class="route-out">GeoJSON regions drawn on map <span class="chip chip-blue chip-mini">grounded</span></div>
+    </div>
+    <p class="hero-card-note mono">live vision-language model when a key is set · transparent rule engine otherwise</p>
+  </aside>
+</section>
+
+<!-- ================= CONSOLE ================= -->
+<section id="console" class="console-section">
+  <div class="section-head">
+    <span class="kicker">01 · Workspace</span>
+    <h2>Query console</h2>
+    <p>Draw an <b>AOI</b> (rectangle or polygon), ask a question, and the assistant selects
+      <b>Optical / Thermal / SAR</b> for you — inside the free public data zone.</p>
+  </div>
+
+  <!-- onboarding: three steps, no GIS knowledge needed -->
+  <ol class="quickstart" aria-label="How to use the console in three steps">
+    <li class="qs-step">
+      <span class="qs-n">1</span>
+      <span class="qs-body">
+        <b>Draw your area</b>
+        <span>Pick <em>Rectangle</em> and drag a box, or <em>Polygon</em> and click points
+          around any shape. It stays inside the dashed free zone.</span>
+      </span>
+    </li>
+    <li class="qs-step">
+      <span class="qs-n">2</span>
+      <span class="qs-body">
+        <b>Ask in plain words</b>
+        <span>“Where are the floods?” · “What changed since 2017?” · “Show port activity at
+          night” — no jargon, no GIS commands.</span>
+      </span>
+    </li>
+    <li class="qs-step">
+      <span class="qs-n">3</span>
+      <span class="qs-body">
+        <b>Read the map answer</b>
+        <span class="qs-colors">The assistant picks the sensor —
+          <b class="qs-opt">Optical</b> for change &amp; description, <b class="qs-th">Thermal</b>
+          for floods &amp; heat, <b class="qs-sar">SAR</b> for night &amp; clouds — then highlights
+          the regions that matter.</span>
+      </span>
+    </li>
+  </ol>
+
+  <!-- modality selector -->
+  <div class="modality-cards" role="tablist" aria-label="Map modality">
+    <button class="mod-card mod-optical is-active" data-modality="Optical" role="tab" aria-selected="true">
+      <span class="mod-head"><span class="mod-ico" aria-hidden="true">◉</span> Optical <span class="mod-badge">auto</span></span>
+      <span class="mod-desc">Sentinel-2 true colour · 10–60 m</span>
+      <span class="mod-use">Change detection · description · land cover</span>
+    </button>
+    <button class="mod-card mod-thermal" data-modality="Thermal" role="tab" aria-selected="false">
+      <span class="mod-head"><span class="mod-ico" aria-hidden="true">▲</span> Thermal <span class="mod-badge">auto</span></span>
+      <span class="mod-desc">MODIS land-surface temp · 1 km</span>
+      <span class="mod-use">Floods · heat hotspots · drought</span>
+    </button>
+    <button class="mod-card mod-sar" data-modality="SAR" role="tab" aria-selected="false">
+      <span class="mod-head"><span class="mod-ico" aria-hidden="true">◆</span> SAR <span class="mod-badge">auto</span></span>
+      <span class="mod-desc">Sentinel-1 C-band radar · 20 m</span>
+      <span class="mod-use">Night · clouds · ports &amp; shipping</span>
+    </button>
+  </div>
+
+  <div class="console-grid">
+    <!-- ---------- chat column ---------- -->
+    <aside class="panel card chat-panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-title">SatQuery Assistant</span>
+          <span class="panel-sub mono" id="aiStatus">checking for a vision-language model…</span>
+        </div>
+        <span class="chip chip-blue chip-mini" id="aiModeChip">CHECKING</span>
+      </div>
+
+      <div class="chat-messages" id="chatMessages" aria-live="polite">
+        <div class="msg msg-ai">
+          <div class="msg-avatar" aria-hidden="true">SQ</div>
+          <div class="msg-body">
+            <p>Hello — I route your question to the right satellite sensor.</p>
+            <p class="msg-hint">Try one of these, or draw an AOI first:</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="example-chips" id="exampleChips">
+        <button class="chip chip-green" data-q="What changed in this region since 2017?">Change since 2017</button>
+        <button class="chip chip-red" data-q="Where are the floods in this region?">Where are floods?</button>
+        <button class="chip chip-amber" data-q="Show port activity at night">Port activity at night</button>
+        <button class="chip chip-green" data-q="Describe the land cover of my AOI">Describe land cover</button>
+        <button class="chip chip-red" data-q="Which areas are dangerously hot?">Heat hotspots</button>
+        <button class="chip chip-amber" data-q="Find ships and radar targets in the dark">Ships in the dark</button>
+        <button class="chip chip-blue" data-q="Why did you pick that layer?">Why this layer?</button>
+      </div>
+
+      <form class="query-form" id="queryForm" autocomplete="off">
+        <label class="sr-only" for="queryInput">Ask a question about the imagery</label>
+        <input id="queryInput" name="query" type="text"
+          placeholder="e.g. Where are floods in my AOI?" maxlength="240" />
+        <button class="btn btn-primary query-send" type="submit" aria-label="Send query">
+          Ask <span aria-hidden="true">→</span>
+        </button>
+      </form>
+    </aside>
+
+    <!-- ---------- map column ---------- -->
+    <div class="map-column">
+      <div class="map-shell card">
+        <div class="map-toolbar" role="toolbar" aria-label="Map tools">
+          <div class="tool-group" aria-label="AOI drawing tools">
+            <span class="tool-label">AOI</span>
+            <button class="tool-btn is-active" data-tool="pan" title="Pan / inspect">🖐 Pan</button>
+            <button class="tool-btn" data-tool="rect" title="Draw a rectangular AOI">▭ Rectangle</button>
+            <button class="tool-btn" data-tool="poly" title="Draw a polygon AOI (click points, double-click to finish)">⬡ Polygon</button>
+            <button class="tool-btn tool-danger" data-tool="clear" title="Clear AOI and results">✕ Clear</button>
+          </div>
+          <div class="tool-group" aria-label="Change detection">
+            <span class="tool-label">Change</span>
+            <button class="tool-btn" id="btnSwipe" title="Swipe between the 2017 and 2025 Sentinel-2 mosaics over the same area">↔ Compare 2017 / 2025</button>
+          </div>
+          <div class="tool-group" aria-label="Base map">
+            <span class="tool-label">Base</span>
+            <button class="tool-btn is-active" data-base="streets">Streets</button>
+            <button class="tool-btn" data-base="satellite">Satellite</button>
+            <button class="tool-btn" id="btnRecenter" title="Fit the free public data zone">⌖ Free zone</button>
+          </div>
+        </div>
+
+        <div id="map" role="application" aria-label="Map: draw your area of interest and view AI results"></div>
+
+        <!-- before/after comparison of the two Sentinel-2 mosaics -->
+        <div class="swipe" id="swipe" hidden>
+          <div class="swipe-head">
+            <span class="swipe-title mono">CHANGE · 2017 ↔ 2025</span>
+            <button class="swipe-close" id="swipeClose" type="button" aria-label="Close the comparison">✕</button>
+          </div>
+          <div class="swipe-labels mono"><span>2017</span><span>2025</span></div>
+          <input id="swipeRange" type="range" min="0" max="100" value="50" step="0.5"
+            aria-label="Drag to compare the 2017 and 2025 mosaics" />
+          <p class="swipe-note mono" id="swipeNote">drag right to reveal 2025</p>
+        </div>
+
+        <div class="map-legend" id="mapLegend">
+          <div class="legend-title mono">LEGEND</div>
+          <div class="legend-row"><span class="sw sw-result" id="swResult"></span> AI-detected region</div>
+          <div class="legend-row"><span class="sw sw-zone"></span> Free public data zone</div>
+          <div class="legend-row"><span class="sw sw-aoi"></span> Your AOI</div>
+          <div class="legend-row"><span class="sw sw-layer" id="swLayer"></span> <span id="legendLayerName">Optical layer</span></div>
+        </div>
+
+        <div class="map-toast" id="mapToast" role="status" aria-live="polite"></div>
+        <div class="map-status mono" id="mapStatus">— · —</div>
+      </div>
+
+      <div class="result-row">
+        <div class="card result-card">
+          <div class="panel-head">
+            <div>
+              <span class="panel-title">AI answer</span>
+              <span class="panel-sub mono" id="answerMeta">waiting for a query…</span>
+            </div>
+            <span class="chip chip-blue chip-mini" id="answerModalityChip">—</span>
+          </div>
+          <div class="answer-body" id="answerBody">
+            <p class="answer-empty">Ask a question on the left. The assistant will pick
+              <b>Optical</b>, <b>Thermal</b> or <b>SAR</b>, explain why, and highlight regions
+              straight on the map.</p>
+          </div>
+        </div>
+
+        <div class="card aoi-card">
+          <div class="panel-head">
+            <div>
+              <span class="panel-title">AOI &amp; coverage</span>
+              <span class="panel-sub mono" id="aoiMeta">no AOI yet — using demo zone</span>
+            </div>
+            <span class="chip chip-green chip-mini" id="zoneChip">IN ZONE</span>
+          </div>
+          <dl class="aoi-facts" id="aoiFacts">
+            <div><dt>Demo zone</dt><dd id="factZone">Mumbai Metropolitan Region</dd></div>
+            <div><dt>Bounds</dt><dd class="mono" id="factBounds">—</dd></div>
+            <div><dt>AOI area</dt><dd id="factArea">—</dd></div>
+            <div><dt>Active layer</dt><dd id="factLayer">Optical · Sentinel-2</dd></div>
+          </dl>
+          <p class="aoi-note" id="aoiNote">Only imagery inside the dashed boundary is free &amp;
+            public (Sentinel‑1/2, MODIS). Drawing outside is allowed, but answers stay inside
+            the public zone.</p>
+          <div class="aoi-actions">
+            <button class="btn btn-ghost btn-sm" id="btnLoadSamples">Preview sample overlays</button>
+            <button class="btn btn-ghost btn-sm" id="btnClearResults">Clear highlights</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PIPELINE ================= -->
+<section id="pipeline" class="section">
+  <div class="section-head">
+    <span class="kicker">02 · Architecture</span>
+    <h2>From question to grounded map answer</h2>
+    <p>The proposed system architecture from our SIH proposal — seven steps, one workflow.</p>
+  </div>
+
+  <ol class="pipeline">
+    <li class="pipe-step card">
+      <span class="pipe-n">1</span><h3>User query</h3>
+      <p>Natural-language question, e.g. <i>“Show areas affected by flooding in this region.”</i></p>
+    </li>
+    <li class="pipe-step card">
+      <span class="pipe-n">2</span><h3>Multimodal data</h3>
+      <p>Optical, SAR &amp; Thermal satellite imagery is selected for the AOI.</p>
+    </li>
+    <li class="pipe-step card">
+      <span class="pipe-n">3</span><h3>Vision-language AI</h3>
+      <p>LLaVA / GEOCHAT interprets the image together with your query.</p>
+    </li>
+    <li class="pipe-step card">
+      <span class="pipe-n">4</span><h3>Geospatial grounding</h3>
+      <p>SAM / CLIP-BLIP detects and localises the relevant regions (mask).</p>
+    </li>
+    <li class="pipe-step card">
+      <span class="pipe-n">5</span><h3>Backend &amp; DB</h3>
+      <p>FastAPI orchestrates models; PostgreSQL + PostGIS stores imagery &amp; spatial results.</p>
+    </li>
+    <li class="pipe-step card">
+      <span class="pipe-n">6</span><h3>Interactive map</h3>
+      <p>React + Leaflet / OpenLayers renders the map, layers, zoom, pan &amp; highlights.</p>
+    </li>
+    <li class="pipe-step card pipe-final">
+      <span class="pipe-n">7</span><h3>Grounded output</h3>
+      <p>Highlighted regions + AI insight, e.g. <i>“red areas indicate flooding from optical,
+        SAR &amp; thermal analysis.”</i></p>
+    </li>
+  </ol>
+
+  <div class="sub-head"><h3>Key challenges &amp; mitigations</h3></div>
+  <div class="challenge-grid">
+    <div class="challenge card"><b>Very large images</b><span>Image tiling / sliding-window inference</span></div>
+    <div class="challenge card"><b>High compute cost</b><span>Model quantisation + GPU/cloud inference</span></div>
+    <div class="challenge card"><b>3 different modalities</b><span>Modality-specific preprocessing &amp; fine-tuning</span></div>
+    <div class="challenge card"><b>Grounding accuracy</b><span>SAM / CLIP-BLIP verification of regions</span></div>
+  </div>
+
+  <div class="sub-head"><h3>Technology stack <span class="chip chip-blue chip-mini">as proposed</span></h3></div>
+  <div class="stack-chips">
+    <span class="chip">Python</span><span class="chip chip-red">FastAPI</span>
+    <span class="chip chip-blue">React</span><span class="chip chip-green">Leaflet</span>
+    <span class="chip chip-green">OpenLayers</span><span class="chip chip-red">GEOCHAT</span>
+    <span class="chip chip-blue">LLaVA</span><span class="chip chip-green">SAM</span>
+    <span class="chip chip-amber">CLIP-BLIP</span><span class="chip chip-blue">PostgreSQL</span>
+    <span class="chip chip-red">PostGIS</span>
+    <span class="chip chip-ghost">MVP: vanilla JS + Leaflet</span>
+    <span class="chip chip-green">live VLM proxy · free tier</span>
+    <span class="chip chip-blue">rule engine fallback</span>
+  </div>
+</section>
+
+<!-- ================= DATA ================= -->
+<section id="data" class="section section-alt">
+  <div class="section-head">
+    <span class="kicker">03 · Free public data</span>
+    <h2>Three sensors, one question box</h2>
+    <p>Every dataset below is <b>free &amp; public</b> — no API keys, no billing. The assistant
+      picks the sensor that can actually answer your question.</p>
+  </div>
+
+  <div class="rules-grid">
+    <article class="rule-card card rule-optical">
+      <header><span class="rule-tag">OPTICAL</span><h3>Change &amp; description</h3></header>
+      <p>“What changed since 2017?”, “Describe the land cover”, “How much vegetation is left?”</p>
+      <ul>
+        <li>Sentinel-2 true colour, 10–60 m</li>
+        <li>Reflectance you can see — best for before/after</li>
+        <li>Cloud-limited: needs clear-sky passes</li>
+      </ul>
+      <p class="rule-src mono">source: Copernicus S2 · EOX s2cloudless · free</p>
+    </article>
+    <article class="rule-card card rule-thermal">
+      <header><span class="rule-tag">THERMAL</span><h3>Floods &amp; heat</h3></header>
+      <p>“Where are the floods?”, “Which areas are hot?”, “Show drought stress.”</p>
+      <ul>
+        <li>MODIS land-surface temperature, 1 km</li>
+        <li>Standing water &amp; soil moisture show up as cold anomalies</li>
+        <li>Heat islands, fire risk &amp; drought signals</li>
+      </ul>
+      <p class="rule-src mono">source: NASA EOSDIS GIBS · free &amp; open</p>
+    </article>
+    <article class="rule-card card rule-sar">
+      <header><span class="rule-tag">SAR</span><h3>Night &amp; all-weather</h3></header>
+      <p>“Show port activity at night”, “Ships in the dark”, “Anything through the clouds?”</p>
+      <ul>
+        <li>Sentinel-1 C-band radar, 20 m</li>
+        <li>Illuminates itself — works at night &amp; through clouds</li>
+        <li>Ports, ships, structures &amp; water surfaces pop</li>
+      </ul>
+      <p class="rule-src mono">source: Copernicus S1 · Planetary Computer · free</p>
+    </article>
+  </div>
+
+  <div class="sub-head">
+    <h3>Preloaded sample collection — Mumbai Metropolitan Region</h3>
+    <p class="sub-note">Collected by <code class="mono">scripts/collect-data.mjs</code> from the
+      public endpoints above. Every card shows its source, date &amp; licence; click
+      <b>Show on map</b> to overlay it inside the free zone.</p>
+  </div>
+  <div class="gallery" id="gallery" aria-label="Sample datasets">
+    <p class="gallery-loading mono">loading catalog…</p>
+  </div>
+</section>
+
+<!-- ================= COMPARE ================= -->
+<section id="compare" class="section">
+  <div class="section-head">
+    <span class="kicker">04 · Positioning</span>
+    <h2>Comparison with existing systems</h2>
+    <p>Transcribed claims from our proposal deck — SatQuery (GEOCHAT) vs. the alternatives.</p>
+  </div>
+
+  <div class="table-wrap card">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th scope="col">Capability</th>
+          <th scope="col" class="ours">SatQuery (ours)</th>
+          <th scope="col">ChatGPT (Vision)</th>
+          <th scope="col">Bhuvan (ISRO)</th>
+          <th scope="col">QGIS / ArcGIS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Optical imagery support</th><td class="ours"><span class="mark yes">yes</span></td><td><span class="mark yes">yes</span></td><td><span class="mark yes">yes</span></td><td><span class="mark yes">yes</span></td></tr>
+        <tr><th scope="row">SAR imagery support</th><td class="ours"><span class="mark yes">yes</span></td><td><span class="mark no">no</span></td><td><span class="mark yes">yes</span></td><td><span class="mark yes">yes</span></td></tr>
+        <tr><th scope="row">Thermal imagery support</th><td class="ours"><span class="mark yes">yes</span></td><td><span class="mark no">no</span></td><td><span class="mark yes">yes</span></td><td><span class="mark yes">yes</span></td></tr>
+        <tr><th scope="row">Natural-language queries</th><td class="ours"><span class="mark yes">yes</span></td><td><span class="mark yes">yes</span></td><td><span class="mark no">no</span></td><td><span class="mark no">no</span></td></tr>
+        <tr><th scope="row">AI region identification (SAM / CLIP)</th><td class="ours"><span class="mark yes">yes</span></td><td><span class="mark no">no</span></td><td><span class="mark no">no</span></td><td><span class="mark no">no</span></td></tr>
+        <tr><th scope="row">Interactive map visualisation</th><td class="ours"><span class="mark yes">yes</span></td><td><span class="mark lim">limited</span></td><td><span class="mark yes">yes</span></td><td><span class="mark yes">yes</span></td></tr>
+        <tr><th scope="row">Location-grounded AI answers</th><td class="ours"><span class="mark yes">yes</span></td><td><span class="mark no">no</span></td><td><span class="mark no">no</span></td><td><span class="mark no">no</span></td></tr>
+        <tr><th scope="row">Multi-domain (agri · disaster · urban · env)</th><td class="ours"><span class="mark yes">yes</span></td><td><span class="mark lim">limited</span></td><td><span class="mark yes">yes</span></td><td><span class="mark yes">yes</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= IMPACT ================= -->
+<section id="impact" class="section section-alt">
+  <div class="section-head">
+    <span class="kicker">05 · Impact</span>
+    <h2>Who gets faster answers</h2>
+  </div>
+
+  <div class="impact-grid">
+    <div class="impact card"><b>Faster decisions</b><span>Complex imagery → quick, location-based insight</span></div>
+    <div class="impact card"><b>Government &amp; agencies</b><span>Disaster mgmt, urban planning, infrastructure</span></div>
+    <div class="impact card"><b>Environmental</b><span>Temperature hotspots, land use, vegetation risk</span></div>
+    <div class="impact card"><b>Economic</b><span>Less manual image analysis, lower ops effort</span></div>
+    <div class="impact card"><b>Accessible</b><span>NL queries make remote sensing usable by anyone</span></div>
+    <div class="impact card"><b>Scalable</b><span>One platform → agriculture, response, smart cities</span></div>
+  </div>
+
+  <div class="sub-head"><h3>Potential impact on target audiences</h3></div>
+  <div class="audience-grid">
+    <div class="audience card"><b>Disaster response teams</b><span>Faster flood mapping &amp; damage assessment for resource allocation.</span></div>
+    <div class="audience card"><b>Agriculture &amp; farmers</b><span>Crop-health and drought-stress monitoring with Optical + Thermal.</span></div>
+    <div class="audience card"><b>Urban planners</b><span>Quick analysis of urban expansion, infrastructure &amp; land-use change.</span></div>
+    <div class="audience card"><b>Researchers &amp; analysts</b><span>Complex O/S/T imagery through natural-language queries.</span></div>
+    <div class="audience card"><b>Decision makers</b><span>Location-grounded visual insights for data-driven decisions.</span></div>
+  </div>
+</section>
+
+<!-- ================= REFERENCES ================= -->
+<section id="refs" class="section">
+  <div class="section-head">
+    <span class="kicker">06 · Research</span>
+    <h2>References</h2>
+    <p>Works our proposal builds on, plus the free services this demo actually calls.</p>
+  </div>
+  <div class="refs-grid">
+    <a class="ref card" href="https://github.com/haotian-liu/LLaVA" target="_blank" rel="noopener">
+      <b>LLaVA</b><span>Visual instruction tuning — foundation of our vision-language step</span><em>github.com/haotian-liu/LLaVA</em></a>
+    <a class="ref card" href="https://github.com/facebookresearch/segment-anything" target="_blank" rel="noopener">
+      <b>SAM</b><span>Region segmentation &amp; grounding for detected regions</span><em>github.com/facebookresearch/segment-anything</em></a>
+    <div class="ref card"><b>GEOCHAT</b><span>Vision-language satellite assistant (cited reference in proposal)</span><em>ref: LLaVA — Visual Instruction Tuning</em></div>
+    <div class="ref card"><b>ChangeChat</b><span>Satellite image change analysis with vision-language understanding</span><em>ref: LLaVA — Visual Instruction Tuning</em></div>
+    <a class="ref card" href="https://sentiwiki.copernicus.eu/web/s2-mission" target="_blank" rel="noopener">
+      <b>Optical + SAR</b><span>ESA Sentinel-2 (optical) &amp; Sentinel-1 (radar) missions</span><em>sentiwiki.copernicus.eu</em></a>
+    <a class="ref card" href="https://gibs.earthdata.nasa.gov" target="_blank" rel="noopener">
+      <b>NASA GIBS</b><span>Free WMTS/WMS imagery — thermal layer of this demo</span><em>gibs.earthdata.nasa.gov</em></a>
+    <a class="ref card" href="https://planetarycomputer.microsoft.com" target="_blank" rel="noopener">
+      <b>Planetary Computer</b><span>Free Sentinel-1 SAR tiles used by this demo</span><em>planetarycomputer.microsoft.com</em></a>
+    <a class="ref card" href="https://eox.at" target="_blank" rel="noopener">
+      <b>EOX Maps</b><span>s2cloudless optical basemap (Sentinel-2 mosaic)</span><em>eox.at</em></a>
+  </div>
+</section>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div>
+      <div class="brand footer-brand"><span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 100 100" width="22" height="22"><circle cx="50" cy="50" r="27" fill="none" stroke="currentColor" stroke-width="10"/><line x1="69" y1="69" x2="90" y2="90" stroke="currentColor" stroke-width="13" stroke-linecap="round"/></svg>
+      </span><span class="brand-text">SATQUERY<b>AI</b></span></div>
+      <p class="footer-note">Interactive Vision-Language Assistant for Multimodal Remote Sensing
+        Image Analysis through Text Queries.</p>
+    </div>
+    <div class="footer-meta">
+      <p><b>Problem statement</b> SIH26167 · Space Technology · Software</p>
+      <p><b>Team</b> OrbitMinds · 122085 · Smart India Hackathon 2026</p>
+      <p><b>Data</b> Copernicus Sentinel‑1/2 (CC BY 4.0) · NASA EOSDIS (public domain) · EOX s2cloudless</p>
+    </div>
+  </div>
+  <p class="footer-disclaimer mono">
+    MVP note: routing runs on a real vision-language model (Groq / Gemini / OpenAI-compatible, see
+    <code>.env.example</code>) that receives your AOI imagery and returns the sensor choice, the
+    answer and its regions; those regions are clamped to your AOI inside the free public zone.
+    With no key configured it falls back to the transparent rule engine, so the demo never breaks.
+    Tiles come from free public endpoints and may rate-limit; sample imagery was collected by
+    <code>scripts/collect-data.mjs</code>.
+  </p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="js/query-engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

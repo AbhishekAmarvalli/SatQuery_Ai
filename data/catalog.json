@@ -1,0 +1,117 @@
+{
+  "generated_at": "2026-09-27T18:22:25.183Z",
+  "aoi": {
+    "name": "Mumbai Metropolitan Region",
+    "bbox": [
+      72.75,
+      18.85,
+      73.05,
+      19.35
+    ],
+    "crs": "EPSG:4326",
+    "note": "Free & public data only — this bbox is the demo 'free data zone' drawn on the map."
+  },
+  "sample_aoi": {
+    "name": "Mumbai Port & Ballard Estate",
+    "bbox": [
+      72.83,
+      18.94,
+      72.905,
+      19.015
+    ],
+    "crs": "EPSG:4326",
+    "note": "High-resolution radar footprint — a ~8 km stretch of working docks. At 1024 px this is ~8 m/px, which matches Sentinel-1's native pixel and stays sharp when you zoom."
+  },
+  "samples": [
+    {
+      "id": "optical_2017",
+      "file": "samples/optical_2017_city.jpg",
+      "footprint": "city",
+      "bbox": [
+        72.75,
+        18.85,
+        73.05,
+        19.35
+      ],
+      "modality": "Optical",
+      "title": "Sentinel-2 true colour mosaic — 2017",
+      "sensor": "MSI (10 m)",
+      "native_m": 10,
+      "px_per_deg": 6827,
+      "provider": "Copernicus / ESA — via EOX Maps s2cloudless",
+      "date": "2017 (annual mosaic)",
+      "resolution_m": "10",
+      "license": "Copernicus free & open data (CC BY 4.0); mosaic © EOX.at",
+      "source_url": "https://tiles.maps.eox.at/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=s2cloudless-2017&STYLES=&FORMAT=image%2Fjpeg&TRANSPARENT=false&CRS=EPSG%3A4326&BBOX=18.85%2C72.75%2C19.35%2C73.05&WIDTH=2048&HEIGHT=3584",
+      "best_for": "Land-cover description, change detection, urban growth, vegetation"
+    },
+    {
+      "id": "optical_2025",
+      "file": "samples/optical_2025_city.jpg",
+      "footprint": "city",
+      "bbox": [
+        72.75,
+        18.85,
+        73.05,
+        19.35
+      ],
+      "modality": "Optical",
+      "title": "Sentinel-2 true colour mosaic — 2025",
+      "sensor": "MSI (10 m)",
+      "native_m": 10,
+      "px_per_deg": 6827,
+      "provider": "Copernicus / ESA — via EOX Maps s2cloudless",
+      "date": "2025 (annual mosaic)",
+      "resolution_m": "10",
+      "license": "Copernicus free & open data (CC BY 4.0); mosaic © EOX.at",
+      "source_url": "https://tiles.maps.eox.at/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=s2cloudless-2025&STYLES=&FORMAT=image%2Fjpeg&TRANSPARENT=false&CRS=EPSG%3A4326&BBOX=18.85%2C72.75%2C19.35%2C73.05&WIDTH=2048&HEIGHT=3584",
+      "best_for": "Land-cover description, change detection, urban growth, vegetation"
+    },
+    {
+      "id": "thermal_lst",
+      "file": "samples/thermal_lst_2025-02-15.png",
+      "footprint": "city",
+      "bbox": [
+        72.75,
+        18.85,
+        73.05,
+        19.35
+      ],
+      "native_m": 1000,
+      "modality": "Thermal",
+      "title": "MODIS Terra land-surface temperature — 2025-02-15",
+      "sensor": "MODIS (1 km)",
+      "provider": "NASA EOSDIS GIBS",
+      "date": "2025-02-15",
+      "resolution_m": "1000",
+      "license": "NASA EOSDIS — free & open (public domain)",
+      "source_url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&STYLES=&CRS=EPSG%3A4326&LAYERS=MODIS_Terra_Land_Surface_Temp_Day&FORMAT=image%2Fpng&WIDTH=1024&HEIGHT=1792&BBOX=18.85%2C72.75%2C19.35%2C73.05&TIME=2025-02-15",
+      "best_for": "Flood standing-water anomalies, heat hotspots, drought stress, fire risk"
+    },
+    {
+      "id": "sar_vv",
+      "file": "samples/sar_vv_2026-09-18_sample.png",
+      "footprint": "sample",
+      "bbox": [
+        72.83,
+        18.94,
+        72.905,
+        19.015
+      ],
+      "native_m": 20,
+      "modality": "SAR",
+      "title": "Sentinel-1 IW GRD — VV backscatter (high-resolution sample)",
+      "sensor": "C-band SAR (20 m)",
+      "provider": "Copernicus / ESA — via Microsoft Planetary Computer",
+      "date": "2026-09-18 01:02:53",
+      "orbit": "descending",
+      "scene": "S1D_IW_GRDH_1SDV_20260918T010238_20260918T010309_004625_008A01",
+      "mosaic_id": "441b5a5b7d41441bc52eb8691f4b1e2c",
+      "tiles_stitched": "16/16",
+      "resolution_m": "20",
+      "license": "Copernicus free & open data (CC BY 4.0)",
+      "source_url": "https://planetarycomputer.microsoft.com/api/data/v1/mosaic/tiles/441b5a5b7d41441bc52eb8691f4b1e2c/{z}/{x}/{y}.png?collection=sentinel-1-grd&assets=vv",
+      "best_for": "Night / all-weather imaging, port & shipping activity, water mapping, structure detection"
+    }
+  ]
+}
