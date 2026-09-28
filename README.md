@@ -196,40 +196,36 @@ an analysis layer.
 
 ## Putting it online
 
-The site is plain static files, so it can go on **GitHub Pages** for free. Be aware of one thing
-first, because it affects what your link can do:
+The site is plain static files plus one optional serverless function, so it runs on **GitHub Pages**
+for free, or on **Vercel** for the full live-model experience.
 
-> **GitHub Pages serves files only — it cannot run the Node proxy.** On a Pages link the chat still
-> works, but it runs on the **rule engine** and the badge reads `RULE-BASED`. Real model inference
-> needs a server, so use Option B for the full experience.
+> **GitHub Pages serves files only — it cannot run the proxy.** There everything works *except* live
+> model inference: the chat runs on the **rule engine** and the badge reads `RULE-BASED`. Real model
+> inference needs a server, so use Vercel for that.
 
-### Option A — GitHub Pages (static frontend, free, easiest)
-
-```bash
-git init
-git add .
-git commit -m "SATQUERY AI — SIH26167 MVP"
-git branch -M main
-git remote add origin https://github.com/<your-username>/<your-repo>.git
-git push -u origin main
-```
-
-Then on GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a branch →
-Branch: `main` / `root` → Save**.
-
-Wait a minute, then your live link is:
+### GitHub Pages (static frontend, free) — live now
 
 ```
-https://<your-username>.github.io/<your-repo>/
+https://abhishekamarvalli.github.io/SatQuery_Ai/
 ```
+
+Repo: <https://github.com/AbhishekAmarvalli/SatQuery_Ai>. Pages is already enabled from `main` /
+root (**Settings → Pages → Build and deployment → Source: Deploy from a branch → `main` / `/`**),
+so every push to `main` redeploys the site.
 
 `.env` is git-ignored, so your API key is **not** uploaded. Never commit it.
 
-### Option B — Vercel (full experience, free Hobby tier)
+### Vercel (full experience, free Hobby tier)
 
-Vercel runs the proxy as a serverless function, so the live model works on a real URL.
-Connect <https://vercel.com> to your GitHub repository. Add these variables under
-**Project → Settings → Environment Variables** and deploy:
+`api/route.js` is the serverless proxy and `vercel.json` routes `/api/status` to it; every other
+file is served as a static asset from the repo root.
+
+```bash
+npx vercel login      # once
+npx vercel --prod     # builds and deploys
+```
+
+Then add the live-model variables under **Project → Settings → Environment Variables** and redeploy:
 
 | Variable | Value |
 | --- | --- |
@@ -239,7 +235,8 @@ Connect <https://vercel.com> to your GitHub repository. Add these variables unde
 | `VLM_SEND_IMAGES` | `1` |
 
 The Groq key is injected by Vercel into `process.env` at runtime — it is never stored in the
-repository, and **never uploaded to GitHub**.
+repository, and **never uploaded to GitHub**. `.vercelignore` also keeps `.env` out of any
+CLI-triggered upload.
 
 Either way, judge the demo from a local `npm run serve` if you want zero risk from conference wifi —
 it has everything and needs no network beyond the free tile services.
@@ -260,6 +257,8 @@ scripts/collect-data.mjs    free public data collector
 scripts/verify.mjs          37-check headless browser test suite
 data/samples/               collected imagery
 data/catalog.json           sample metadata: source, date, licence, footprint
+vercel.json                 Vercel config: static root + the api/route function
+.vercelignore               keeps .env and dev files out of deployments
 ```
 
 ## Troubleshooting
