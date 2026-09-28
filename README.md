@@ -26,8 +26,10 @@ npm run verify     # 37 automated browser checks
 `verify` drives a real headless Chrome through the whole app and asserts the routing, the AOI tools,
 the change comparison and the live-model plumbing. It needs Chrome installed but no API key and no
 network beyond the free public tile services.
+
 ```link is live by the way```
 https://abhishekamarvalli.github.io/SatQuery_Ai/
+
 ---
 
 ## What the demo does
