@@ -21,6 +21,7 @@ import {
   MAX_BODY,
   sendJson,
   handleRoute,
+  readBody,
 } from "../scripts/proxy-core.mjs";
 
 const MIME = {
@@ -38,9 +39,9 @@ const MIME = {
 
 export default async function handler(req, res) {
   const url = new URL(req.url, `https://${req.headers.host || "localhost"}`);
-  const path = url.pathname;
+  const pathname = url.pathname;
 
-  if (path === "/api/status") {
+  if (pathname === "/api/status") {
     const cfg = resolveConfig(process.env);
     sendJson(res, 200, {
       configured: !!cfg.provider,
@@ -54,12 +55,18 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (path === "/api/route") {
+  if (pathname === "/api/route") {
     if (req.method !== "POST") {
       sendJson(res, 405, { ok: false, reason: "method-not-allowed" });
       return;
     }
-    const payload = await readBody(req);
+    let payload;
+    try {
+      payload = await readBody(req);
+    } catch (err) {
+      sendJson(res, 400, { ok: false, reason: "bad-request", detail: String(err.message) });
+      return;
+    }
     await handleRoute(req.headers, payload, process.env, res);
     return;
   }
@@ -68,13 +75,13 @@ export default async function handler(req, res) {
   // framework-level serving. Vercel should route static files itself.
   try {
     const { promises: fs } = await import("fs");
-    const path = require("path");
-    const file = path.normalize(path.join(process.cwd(), path.dirname(url.pathname), url.pathname));
+    const p = (await import("path")).default;
+    const file = p.normalize(p.join(process.cwd(), p.dirname(pathname), pathname));
     if (!file.startsWith(process.cwd())) {
       res.writeHead(403).end("forbidden");
       return;
     }
-    if (url.pathname === "/" || (await isDir(file))) {
+    if (pathname === "/" || (await isDir(file))) {
       res.writeHead(307, { Location: "/index.html" });
       res.end();
       return;
@@ -82,7 +89,7 @@ export default async function handler(req, res) {
     const stat = await fs.stat(file);
     const stream = fs.createReadStream(file);
     res.writeHead(200, {
-      "Content-Type": MIME[path.extname(file).toLowerCase()] || "application/octet-stream",
+      "Content-Type": MIME[p.extname(file).toLowerCase()] || "application/octet-stream",
       "Content-Length": stat.size,
       "Cache-Control": "no-store",
     });

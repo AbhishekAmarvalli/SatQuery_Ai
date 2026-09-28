@@ -1,0 +1,16 @@
+# Never upload local secrets to a deployment. The Groq / Gemini / OpenAI key
+# lives in .env locally and in the host's environment variables in production.
+.env
+.env.local
+
+# Dev-only and heavy directories
+node_modules/
+.freebuff/
+.git/
+
+# Local test artefact
+preview.png
+
+# Local scratch docs
+SIH2026_LLM_Readable.json
+SIH2026_LLM_Readable.txt

@@ -436,15 +436,6 @@ export function sanitise(raw, { freeBox, aoiBox }) {
 }
 
 /* ======================================================= http helpers */ 
-function sendJson(res, code, obj) {
-  const body = JSON.stringify(obj);
-  res.writeHead(code, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Content-Length": Buffer.byteLength(body),
-    "Cache-Control": "no-store",
-  });
-  res.end(body);
-}
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -472,21 +463,36 @@ function readBody(req) {
 
 const MAX_BODY = 12 * 1024 * 1024;
 
-async function handleRoute(headers, payload, env = process.env) {
+/**
+ * Handle a POST /api/route request.
+ *
+ * Sends the JSON response through `sendJson` when an HTTP `res` is supplied
+ * (which both the local server and the Vercel function do) and also returns
+ * `{ status, body }` so the function stays usable from a test harness.
+ */
+async function handleRoute(headers, payload, env = process.env, res = null) {
+  const respond = (status, body) => {
+    if (res && typeof res.writeHead === "function") sendJson(res, status, body);
+    return { status, body };
+  };
+
   const cfg = resolveConfig(env);
   if (!cfg.provider) {
-    return { status: 200, body: { ok: false, reason: cfg.reason } };
+    return respond(200, { ok: false, reason: cfg.reason });
   }
 
+  // `payload` arrives as a parsed object from readBody(), but accept a raw
+  // JSON string too so the function stays usable from a test harness.
   let parsed;
   try {
-    parsed = JSON.parse(payload || "{}");
+    parsed = typeof payload === "string" ? JSON.parse(payload || "{}") : payload || {};
+    if (!parsed || typeof parsed !== "object") throw new Error("not an object");
   } catch {
-    return { status: 400, body: { ok: false, reason: "bad-request" } };
+    return respond(400, { ok: false, reason: "bad-request" });
   }
 
   const query = String(parsed.query || "").slice(0, 500).trim();
-  if (!query) return { status: 400, body: { ok: false, reason: "empty-query" } };
+  if (!query) return respond(400, { ok: false, reason: "empty-query" });
 
   const images = Array.isArray(parsed.images)
     ? parsed.images
@@ -519,41 +525,48 @@ async function handleRoute(headers, payload, env = process.env) {
 
     const parsedOut = sanitise(extractJson(text), { freeBox, aoiBox });
     if (!parsedOut) {
-      return {
-        status: 502,
-        body: { ok: false, reason: "unparseable-model-output", detail: String(text).slice(0, 300) },
-      };
+      return respond(502, {
+        ok: false,
+        reason: "unparseable-model-output",
+        detail: String(text).slice(0, 300),
+      });
     }
 
-    return {
-      status: 200,
-      body: {
-        ok: true,
-        source: {
-          provider: cfg.provider,
-          label: cfg.label,
-          model: cfg.model,
-          images: useImages.length,
-          ms: Date.now() - started,
-        },
-        decision: parsedOut,
-        ...(parsed.debug || env.VLM_DEBUG === "1"
-          ? { raw: String(text).slice(0, 4000), prompt: prompt.userText.slice(0, 1200) }
-          : {}),
+    return respond(200, {
+      ok: true,
+      source: {
+        provider: cfg.provider,
+        label: cfg.label,
+        model: cfg.model,
+        images: useImages.length,
+        ms: Date.now() - started,
       },
-    };
+      decision: parsedOut,
+      ...(parsed.debug || env.VLM_DEBUG === "1"
+        ? { raw: String(text).slice(0, 4000), prompt: prompt.userText.slice(0, 1200) }
+        : {}),
+    });
   } catch (err) {
     const msg = String(err.message);
-    return {
-      status: 502,
-      body: {
-        ok: false,
-        reason: /rate-limited|429/i.test(msg) ? "rate-limited" : "provider-error",
-        detail: msg.slice(0, 400),
-      },
-    };
+    return respond(502, {
+      ok: false,
+      reason: /rate-limited|429/i.test(msg) ? "rate-limited" : "provider-error",
+      detail: msg.slice(0, 400),
+    });
   }
 }
 
 export { MAX_BODY };
 export { handleRoute };
+export { readBody };
+
+export function sendJson(res, code, obj) {
+  const body = JSON.stringify(obj);
+  res.writeHead(code, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": Buffer.byteLength(body),
+    "Cache-Control": "no-store",
+  });
+  res.end(body);
+}
+

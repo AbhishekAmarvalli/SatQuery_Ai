@@ -17,12 +17,16 @@ import {
   buildPrompt,
   MAX_BODY,
   handleRoute,
+  sendJson,
+  MIME,
+  readBody,
 } from "./proxy-core.mjs";
 
 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
+const ROOT_SAFE = ROOT.replace(/\/$/, "");
 const PORT = Number(process.argv[2]) || 8173;
 
 loadEnv(ROOT);
@@ -62,20 +66,29 @@ const app = http.createServer(async (req, res) => {
 
   // ---- static files ----
   try {
-    let file = path.normalize(path.join(ROOT, url));
-    if (!file.startsWith(ROOT)) {
+    // Join the project root with the request URL. We use path.join instead of
+    // path.resolve because on Windows path.resolve treats an absolute URL path
+    // (leading /) as a drive-relative path and drops the root.
+    let file = path.normalize(path.join(ROOT, url === "/" ? "." : url));
+    file = file.replace(/\\$/, "");
+    // Security: refuse to serve anything outside the project root.
+    if (path.relative(ROOT_SAFE, file).startsWith(".." + path.sep) ||
+        path.relative(ROOT_SAFE, file) === "..") {
       res.writeHead(403).end("forbidden");
       return;
     }
-    if (url === "/" || (await isDir(file))) file = path.join(ROOT, "index.html");
+    // If the URL is the root directory itself (or a directory), serve index.html.
+    const isDirRequest = (await isDir(file));
+    if (isDirRequest || url === "/") {
+      file = path.join(ROOT, "index.html");
+    }
     const stat = await fs.stat(file);
     res.writeHead(200, {
       "Content-Type": MIME[path.extname(file).toLowerCase()] || "application/octet-stream",
       "Content-Length": stat.size,
       "Cache-Control": "no-store",
     });
-    createReadStream(file).pipe(res);
-  } catch {
+    createReadStream(file).pipe(res);    } catch {
     res.writeHead(404, { "Content-Type": "text/plain" }).end("not found");
   }
 });

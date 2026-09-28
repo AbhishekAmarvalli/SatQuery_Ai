@@ -316,14 +316,31 @@ try {
      * DATA ZONE" label sits there and would swallow the mousedown.
      */
     async function drawRectAoi() {
+      // The map sits below the fold on first paint, so a viewport-relative
+      // drag would land off-screen. Centre it before measuring coordinates.
+      await livePage.evaluate(() => {
+        const m = document.querySelector("#map");
+        if (m) m.scrollIntoView({ block: "center", behavior: "instant" });
+      });
+      await sleep(400);
+      // Zoom in a couple of levels: at the free-zone zoom a 100 px drag covers
+      // hundreds of km² and lands outside the zone, where no imagery can be
+      // cropped. Two zoom levels in makes a small drag land well inside it.
+      for (let i = 0; i < 2; i++) {
+        await livePage.click(".leaflet-control-zoom-in").catch(() => {});
+        await sleep(400);
+      }
       await livePage.click('[data-tool="rect"]');
       const box = await stableBox(livePage, "#map");
-      const x0 = box.x + box.width * 0.35;
-      const y0 = box.y + box.height * 0.3;
+      if (!box) return null;
+      // Offset up-left of the exact centre: the permanent "FREE PUBLIC DATA
+      // ZONE" label sits there and would swallow the mousedown.
+      const x0 = box.x + box.width / 2 - 130;
+      const y0 = box.y + box.height / 2 - 110;
       await livePage.mouse.move(x0, y0);
       await livePage.mouse.down();
       await sleep(120);
-      await livePage.mouse.move(x0 + 150, y0 + 120, { steps: 10 });
+      await livePage.mouse.move(x0 + 110, y0 + 90, { steps: 10 });
       await sleep(120);
       await livePage.mouse.up();
       await sleep(900);
