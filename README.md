@@ -67,8 +67,12 @@ which one answered: `LIVE VLM` or `RULE-BASED`.
 
 ### Turn it on (free)
 
+The `.env` is **already pre-filled** with a Groq key backed by a vision-capable model
+(`qwen/qwen3.8-27b`): `VLM_PROVIDER=groq` and `GROQ_API_KEY=` are set. If you want a
+different key or model, edit `.env` directly.
+
 ```bash
-cp .env.example .env     # Windows: copy .env.example .env
+# no copy needed — .env is already configured with Groq
 ```
 
 Then set **one** provider and its key in `.env`: only `VLM_PROVIDER` and `GROQ_API_KEY` are required for the Groq path:
@@ -118,6 +122,7 @@ Useful environment variables:
 | `VLM_BASE_URL` | per provider | Point at your own gateway |
 | `VLM_SEND_IMAGES` | `1` | `0` = text-only routing (cheaper, but not actually multimodal) |
 | `VLM_MAX_TOKENS` | `600` | Output cap. Free tiers throttle *output tokens per minute*, so a big reservation can trip a 429 on its own |
+| `VLM_TIMEOUT_MS` | `18000` | Hard cap on one provider call. The browser gives up at 25 s and the rule engine answers, so the chat can never hang |
 | `VLM_DEBUG` | *(unset)* | `1` prints the raw model reply so you can see why a parse failed |
 
 ### API
@@ -137,8 +142,31 @@ Mumbai's whole coastline while the cropped answer correctly identified the Mithi
 through the area — and it answered roughly twice as fast, because a smaller image is also fewer
 vision tokens.
 
-Only two or three images are sent per query: the freshest optical view, plus whichever sensor the
-rule engine already suspects (and the 2017+2025 pair for change questions).
+Only **one** image is sent per query — whichever sensor the rule engine already suspects, cropped to
+your AOI — except for change questions, where the 2017+2025 pair *is* the answer. That matters more
+than it sounds: measured against the live model, a vision question bills a flat ~800 tokens per
+attached image **regardless of the crop's pixel size** (a 256 px crop and a 512 px crop cost the
+identical amount), so one image roughly halves how fast a demo spends its free-tier budget.
+
+### The free tier is metered — the console degrades instead of hanging
+
+Groq's hobby tier allows a few thousand tokens per rolling window, and a vision question costs around
+2,000 of them. Two or three questions can therefore exhaust the window, and the naive response —
+sleep and retry — is worse than useless, because a retry inside the same window is rate-limited too.
+So the console does this instead:
+
+- the proxy reads `retry-after` / `x-ratelimit-reset-*` and **fails fast** when the wait would not
+  help — it answers `retryInSeconds` instead of leaving the typing dots spinning for 10–15 s;
+- the browser **pauses live calls until exactly that moment**: the chip reads `LIVE VLM · PAUSED`
+  and the status line counts down, then **live answers resume on their own** — no reload, no extra
+  click, and the next question goes to the model again;
+- every successful call reports what is left of the window, so the console also stops *before*
+  firing a question it already knows would be refused;
+- questions are handled **one at a time**, and both sides carry a hard timeout (18 s at the proxy,
+  25 s in the browser), so a stalled provider can never freeze the chat.
+
+Set `VLM_SEND_IMAGES=0` for text-only routing if you need many consecutive live answers — each one
+then costs about a third as much.
 
 Two further guards keep the answers honest:
 
@@ -269,6 +297,7 @@ vercel.json                 Vercel config: static root + the api/route function
 | Symptom | Fix |
 | --- | --- |
 | Badge says `RULE-BASED` although `.env` is set | Restart the server — `scripts/serve.mjs` reads `.env` only at startup |
+| Answers keep coming from the rule engine with a "rate limit" toast | The free-tier token window is spent. The chip shows `LIVE VLM · PAUSED` with a countdown, the rule engine answers meanwhile, and live answers resume automatically when the window refills |
 | `provider-error` toast | Run with `VLM_DEBUG=1`, or `POST {debug:true}` to `/api/route`, to see the raw reply |
 | Model not found | Your key may not serve that model — list its vision models (above) and set `VLM_MODEL` |
 | Tiles look soft when zoomed in | That is the sensor's real resolution, not a bug — see the footprint section above |

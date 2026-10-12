@@ -11,7 +11,6 @@ import { createReadStream, existsSync, promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  loadEnv,
   resolveConfig,
   sanitise,
   buildPrompt,
@@ -29,7 +28,12 @@ const ROOT = path.resolve(__dirname, "..");
 const ROOT_SAFE = ROOT.replace(/\/$/, "");
 const PORT = Number(process.argv[2]) || 8173;
 
-loadEnv(ROOT);
+// .env loads asynchronously (node:fs is async), so start the HTTP server only
+// after it has been applied to process.env.
+await (async () => {
+  const { loadEnv } = await import("./proxy-core.mjs");
+  await loadEnv(ROOT);
+})();
 
 const app = http.createServer(async (req, res) => {
   const url = decodeURIComponent((req.url || "/").split("?")[0]);

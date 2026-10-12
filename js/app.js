@@ -596,10 +596,16 @@
    */
   const VLM = {
     status: { configured: false, reason: "unknown" },
+    /** Set after a rate limit or a stalled provider, so we stop burning the free tier. */
+    pausedUntil: 0,
+    pauseWhy: "",
+    busy: false,
 
     async init() {
       try {
-        const res = await fetch("/api/status", { cache: "no-store" });
+        // relative on purpose: the site also ships on GitHub Pages, where a
+        // leading slash would resolve to the domain root and 404.
+        const res = await fetch("api/status", { cache: "no-store" });
         if (res.ok) this.status = await res.json();
       } catch (err) {
         // opened from file:// or the proxy is down — rule engine only
@@ -624,26 +630,31 @@
       const guessed = (E.route(query) || {}).modality;
 
       const pick = [];
-      if (optical.length) pick.push(optical[optical.length - 1]);
-
       if (wantsChange) {
-        // a real before/after pair is the only way to see change
+        // A real before/after pair is the only way to see change, so this is
+        // the one case that earns two images.
+        if (optical.length) pick.push(optical[optical.length - 1]);
         if (byId("optical_2017")) pick.push(byId("optical_2017"));
-      } else if (guessed === "Thermal") {
-        if (byId("thermal_lst")) pick.push(byId("thermal_lst"));
-      } else if (guessed === "SAR") {
-        if (byId("sar_vv")) pick.push(byId("sar_vv"));
       } else {
-        const extra = byId("thermal_lst") || byId("sar_vv");
-        if (extra) pick.push(extra);
+        // Everything else is a single-sensor question, and vision tokens are
+        // what the free tier runs out of: one well-cropped image answers it and
+        // leaves budget for the next question instead of a rate limit.
+        const preferred =
+          guessed === "Thermal" ? byId("thermal_lst") : guessed === "SAR" ? byId("sar_vv") : null;
+        pick.push(preferred || optical[optical.length - 1] || byId("thermal_lst") || byId("sar_vv"));
       }
 
       const out = [];
-      for (const s of pick.slice(0, 3)) {
+      for (const s of pick.filter(Boolean).slice(0, 3)) {
         try {
-          out.push({ label: s.modality, dataUrl: await cropDataUrl(s) });
+          const dataUrl = await cropDataUrl(s);
+          // Skip images that are too small to be meaningful to the vision model.
+          // cropDataUrl() floors at 32 px, so anything below that is skipped here;
+          // a missing image is not a reason to fall back to the rule engine.
+          if (!dataUrl) continue;
+          out.push({ label: s.modality, dataUrl });
         } catch (err) {
-          /* sample missing — send the rest */
+          /* sample missing or unusable — send the rest */
         }
       }
       return out;
@@ -652,23 +663,39 @@
     async route(query) {
       if (!this.status.configured) return null;
       const imgs = await this.images(query);
-      const res = await fetch("/api/route", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query,
-          aoiName: state.catalog.aoi && state.catalog.aoi.name,
-          bbox: boundsBox(state.freeBounds),
-          aoi: state.aoiBounds ? boundsBox(state.aoiBounds) : null,
-          modalities: imgs.map((i) => i.label),
-          images: imgs.map((i) => i.dataUrl),
-        }),
-      });
+      // The proxy gives up on the provider after VLM_TIMEOUT_MS (18 s); the
+      // browser waits a little longer and then answers from the rule engine,
+      // so the typing dots can never spin forever.
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 25000);
+      let res;
+      try {
+        res = await fetch("api/route", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query,
+            aoiName: state.catalog.aoi && state.catalog.aoi.name,
+            bbox: boundsBox(state.freeBounds),
+            aoi: state.aoiBounds ? boundsBox(state.aoiBounds) : null,
+            modalities: imgs.map((i) => i.label),
+            images: imgs.map((i) => i.dataUrl),
+          }),
+          signal: ctrl.signal,
+        });
+      } catch (err) {
+        return { error: /abort/i.test(String(err && err.name)) ? "timeout" : "network" };
+      } finally {
+        clearTimeout(timer);
+      }
       const json = await res.json().catch(() => null);
       if (!json || !json.ok || !json.decision) {
-        return { error: (json && json.reason) || "http-" + res.status };
+        return {
+          error: (json && json.reason) || "http-" + res.status,
+          retryInSeconds: json && json.retryInSeconds,
+        };
       }
-      return { decision: json.decision, source: json.source };
+      return { decision: json.decision, source: json.source, budget: json.budget };
     },
   };
 
@@ -727,13 +754,20 @@
 
     const sx = Math.max(0, Math.round(fx0 * img.naturalWidth));
     const sy = Math.max(0, Math.round(fy0 * img.naturalHeight));
-    const sw = Math.max(1, Math.round((fx1 - fx0) * img.naturalWidth));
-    const sh = Math.max(1, Math.round((fy1 - fy0) * img.naturalHeight));
+    const sw = Math.round((fx1 - fx0) * img.naturalWidth);
+    const sh = Math.round((fy1 - fy0) * img.naturalHeight);
 
+    // Never let the canvas shrink below 32 px — a 1x1 (or near-1x1) image is
+    // rejected by the vision model as "invalid image data", which made the
+    // assistant silently fall back to the rule engine.
+    // Keep the long side at 768 px: measured against Groq's vision model the
+    // token cost is the same for a 256 px and a 512 px crop (the model resizes
+    // internally), so shrinking further only throws away detail for nothing.
+    // The way to cut the bill is fewer images, not smaller ones.
     const limit = max || 768;
     const scale = Math.min(1, limit / Math.max(sw, sh));
-    const cw = Math.max(1, Math.round(sw * scale));
-    const ch = Math.max(1, Math.round(sh * scale));
+    const cw = Math.max(32, Math.round(sw * scale));
+    const ch = Math.max(32, Math.round(sh * scale));
 
     const canvas = document.createElement("canvas");
     canvas.width = cw;
@@ -749,15 +783,67 @@
     const chip = $("aiModeChip");
     const s = VLM.status;
     if (s.configured) {
-      chip.textContent = "LIVE VLM";
-      chip.className = "chip chip-green chip-mini";
-      $("aiStatus").textContent =
-        `ready · live VLM (${s.provider})${s.sendImages ? " · sees imagery" : " · text only"}`;
+      const paused = VLM.pausedUntil > Date.now();
+      chip.textContent = paused ? "LIVE VLM · PAUSED" : "LIVE VLM";
+      chip.className = "chip " + (paused ? "chip-amber" : "chip-green") + " chip-mini";
+      $("aiStatus").textContent = paused
+        ? `live model paused (${VLM.pauseWhy || "rate limit"}) · rule engine answering`
+        : `ready · live VLM (${s.provider})${s.sendImages ? " · sees imagery" : " · text only"}`;
     } else {
       chip.textContent = "RULE-BASED";
       chip.className = "chip chip-blue chip-mini";
-      $("aiStatus").textContent = "ready · rule-based router (add a key in .env for live VLM)";
+      $("aiStatus").textContent = "ready · rule engine";
     }
+  }
+
+  /* ---------------- free-tier pause: resume on the provider's own clock ---------------- */
+  let pauseTimer = null;
+
+  /**
+   * Groq's free tier is a rolling token window. While it is spent, every retry
+   * inside it is spent too, so asking again only burns time. Pause instead, let
+   * the rule engine answer, and count down to the refill — that countdown is
+   * what brings live answers back on their own, with no reload and no re-click.
+   */
+  function pauseLive(ms, why) {
+    VLM.pausedUntil = Date.now() + Math.max(1000, ms);
+    VLM.pauseWhy = why || "rate limit";
+    paintMode();
+    if (pauseTimer) return;
+    const tick = () => {
+      const left = VLM.pausedUntil - Date.now();
+      if (left <= 0) {
+        clearInterval(pauseTimer);
+        pauseTimer = null;
+        VLM.pausedUntil = 0;
+        VLM.pauseWhy = "";
+        paintMode();
+        if (!VLM.busy) toast("Live model ready again — new questions go to the model ✓");
+        return;
+      }
+      // never overwrite a status line that is reporting an answer in flight
+      if (!VLM.busy) {
+        $("aiStatus").textContent =
+          `live model paused (${VLM.pauseWhy}) · back in ${Math.ceil(left / 1000)}s · ` +
+          "rule engine answering";
+      }
+    };
+    tick();
+    pauseTimer = setInterval(tick, 1000);
+  }
+
+  /** Roughly what one vision question costs; below this the next ask would be refused. */
+  const VLM_MIN_BUDGET = 1600;
+
+  /**
+   * Every successful call reports what is left of the free-tier window. Stop
+   * before firing a question we already know would be refused, and wait for the
+   * refill the provider itself announced.
+   */
+  function applyBudget(budget) {
+    if (!budget || !Number.isFinite(budget.remaining) || budget.remaining >= VLM_MIN_BUDGET) return;
+    const secs = Number.isFinite(budget.resetInSeconds) ? budget.resetInSeconds : 30;
+    pauseLive(Math.min(Math.max(secs, 5), 150) * 1000, "rate limit");
   }
 
   /** Adapt a model decision to exactly the shape the rule engine returns. */
@@ -806,7 +892,21 @@
   async function handleQuery(raw) {
     const q = (raw || "").trim();
     if (!q) return;
+    // One question at a time: stacked requests all bill the same free-tier
+    // token window, which is how a demo burns its budget in two questions.
+    if (VLM.busy) {
+      toast("Still working on the previous question — one at a time keeps the free tier happy", true);
+      return;
+    }
+    VLM.busy = true;
+    try {
+      await runQuery(q);
+    } finally {
+      VLM.busy = false;
+    }
+  }
 
+  async function runQuery(q) {
     addMsg("user", `<p>${escapeHtml(q)}</p>`);
     $("queryInput").value = "";
 
@@ -828,18 +928,44 @@
     // Live vision-language first; the rule engine is the guaranteed fallback.
     let decision = ruleDecision;
     if (VLM.status.configured) {
-      $("aiStatus").textContent = `asking ${VLM.status.label || VLM.status.provider}…`;
-      try {
-        const vlm = await VLM.route(q);
-        if (vlm && vlm.decision) {
-          decision = adaptVlm(vlm, ruleDecision, ctx);
-        } else if (vlm && vlm.error === "rate-limited") {
-          toast("Free-tier rate limit reached — rule engine answered this one", true);
-        } else {
-          toast(`live VLM unavailable (${vlm && vlm.error}) — rule engine used`, true);
+      if (Date.now() < VLM.pausedUntil) {
+        // asking again while the window is spent only adds another 429
+        $("aiStatus").textContent =
+          `live model paused (${VLM.pauseWhy || "rate limit"}) · back in ` +
+          `${Math.ceil((VLM.pausedUntil - Date.now()) / 1000)}s · rule engine answering`;
+      } else {
+        const provider = VLM.status.label || VLM.status.provider;
+        const started = Date.now();
+        $("aiStatus").textContent = `asking ${provider}…`;
+        // a live answer takes a few seconds; keep the readout moving so the
+        // panel never looks frozen
+        const ticker = setInterval(() => {
+          $("aiStatus").textContent = `asking ${provider}… ${Math.round((Date.now() - started) / 1000)}s`;
+        }, 1000);
+        try {
+          const vlm = await VLM.route(q);
+          if (vlm && vlm.decision) {
+            decision = adaptVlm(vlm, ruleDecision, ctx);
+            // stop while there is still budget, so the next question is not
+            // the one that walks into the wall
+            applyBudget(vlm.budget);
+          } else if (vlm && vlm.error === "rate-limited") {
+            // Groq's free tier meters a few thousand tokens per window; the
+            // proxy reports when it refills, so pause exactly that long.
+            const secs = Number.isFinite(vlm.retryInSeconds) ? vlm.retryInSeconds : 30;
+            pauseLive(Math.min(Math.max(secs, 5), 150) * 1000, "rate limit");
+            toast("Free-tier rate limit reached — rule engine answered this one", true);
+          } else if (vlm && vlm.error === "timeout") {
+            pauseLive(10000, "provider timeout");
+            toast("Live model timed out — rule engine answered instead", true);
+          } else {
+            toast(`live VLM unavailable (${vlm && vlm.error}) — rule engine used`, true);
+          }
+        } catch (err) {
+          toast(`live VLM failed — rule engine used`, true);
+        } finally {
+          clearInterval(ticker);
         }
-      } catch (err) {
-        toast(`live VLM failed — rule engine used`, true);
       }
     }
 

@@ -9,26 +9,14 @@
  * The browser never sees the API key: this is the server-side proxy that
  * replaces the FastAPI service in the SIH architecture diagram.
  */
-export const MIME = {
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".mjs": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".txt": "text/plain; charset=utf-8",
-};
+import { readFileSync } from "node:fs";
 
-/* ============================================================ env loading */ 
+/** Load `.env` / `.env.local` into `process.env` (only when unset). */
 export function loadEnv(ROOT) {
   for (const name of [".env", ".env.local"]) {
     const file = `${ROOT}/${name}`;
     try {
-      const raw = require("fs").readFileSync(file, "utf8");
+      const raw = readFileSync(file, "utf8");
       for (const line of raw.split(/\r?\n/)) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith("#")) continue;
@@ -43,7 +31,20 @@ export function loadEnv(ROOT) {
   }
 }
 
-/* ==================================================== provider config */ 
+export const MIME = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".txt": "text/plain; charset=utf-8",
+};
+
 export const PROVIDERS = {
   groq: {
     label: "Groq",
@@ -186,7 +187,96 @@ export function buildPrompt({ query, aoiName, bbox, aoiBox, modalities, attached
   return { system, userText };
 }
 
-/* ============================================================ provider calls */ 
+/* ============================================================ provider calls */
+
+/**
+ * Free tiers meter output tokens per rolling window (Groq's hobby tier is a
+ * few thousand tokens), so a rate limit is usually a *window* problem, not a
+ * transient blip: every retry inside the same window is rate-limited too.
+ * Waiting is only worth it when the wait is short.
+ */
+const RATE_LIMIT_MAX_WAIT_MS = 1200;
+
+/** Hard cap on a single provider call, so a stalled upstream cannot hang the chat. */
+function upstreamSignal() {
+  const ms = Number(process.env.VLM_TIMEOUT_MS) || 18000;
+  try {
+    return AbortSignal.timeout(ms);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Parse `retry-after` / `x-ratelimit-reset-*` headers ("224ms", "2m52.8s", plain seconds). */
+function durationMs(text) {
+  const s = String(text || "").trim();
+  if (!s) return NaN;
+  let total = 0;
+  let matched = false;
+  const h = /([\d.]+)h/.exec(s);
+  if (h) { total += Number(h[1]) * 3600e3; matched = true; }
+  const min = /([\d.]+)m(?!s)/.exec(s);
+  if (min) { total += Number(min[1]) * 60e3; matched = true; }
+  const sec = /([\d.]+)s/.exec(s);
+  if (sec) { total += Number(sec[1]) * 1e3; matched = true; }
+  const ms = /([\d.]+)ms/.exec(s);
+  if (ms) { total += Number(ms[1]); matched = true; }
+  if (matched) return total;
+  const n = Number(s);
+  return Number.isFinite(n) ? n * 1000 : NaN;
+}
+
+/**
+ * Free-tier state as the provider reports it: how much of the window is left
+ * and when it refills. Returned to the browser so the assistant can pause and
+ * resume on the provider's own clock instead of guessing.
+ */
+function windowFrom(res) {
+  const num = (name) => {
+    const v = Number(res.headers.get(name));
+    return Number.isFinite(v) ? v : null;
+  };
+  const reset = durationMs(
+    res.headers.get("x-ratelimit-reset-tokens") || res.headers.get("x-ratelimit-reset-requests")
+  );
+  const remaining = num("x-ratelimit-remaining-tokens");
+  if (remaining == null && !Number.isFinite(reset)) return null;
+  return {
+    remaining,
+    limit: num("x-ratelimit-limit-tokens"),
+    resetInSeconds: Number.isFinite(reset) ? Math.max(0, Math.round(reset / 1000)) : null,
+  };
+}
+
+/** One retry is allowed only when it can realistically succeed. */
+async function recoverRateLimit(cfg, res, send) {
+  const retryAfter = durationMs(res.headers.get("retry-after"));
+  const win = windowFrom(res);
+  const reset = win && Number.isFinite(win.resetInSeconds) ? win.resetInSeconds * 1000 : NaN;
+  const waitMs = Number.isFinite(retryAfter) ? retryAfter : reset;
+  const detail = await res.text().catch(() => "");
+
+  const giveUp = (ms) => {
+    const err = new Error(
+      `${cfg.label} rate-limited (429) — the free-tier token window is spent, so a retry now would ` +
+        `just fail again. ` +
+        (Number.isFinite(ms) ? `Back in ~${Math.max(1, Math.round(ms / 1000))}s. ` : "") +
+        `Send fewer or smaller images, or set VLM_SEND_IMAGES=0. ${detail.slice(0, 160)}`
+    );
+    err.code = "rate-limited";
+    // when the browser may try again, on the provider's own clock
+    err.retryInSeconds = Number.isFinite(ms) ? Math.max(1, Math.round(ms / 1000)) : null;
+    return err;
+  };
+
+  if (!Number.isFinite(waitMs) || waitMs > RATE_LIMIT_MAX_WAIT_MS) throw giveUp(waitMs);
+
+  await new Promise((r) => setTimeout(r, waitMs + 60));
+  const retried = await send(true);
+  if (retried.status === 429) throw giveUp(waitMs);
+  return retried;
+}
+
 function dataUrlToGeminiPart(url) {
   const m = /^data:([^;]+);base64,(.*)$/.exec(url || "");
   if (!m) return null;
@@ -215,25 +305,17 @@ async function callOpenAICompat(cfg, prompt, images) {
         Authorization: `Bearer ${cfg.key || "not-needed"}`,
       },
       body: JSON.stringify(withJsonMode ? { ...body, response_format: { type: "json_object" } } : body),
+      signal: upstreamSignal(),
     });
 
   let res = await send(true);
   if (res.status === 400 || res.status === 422) res = await send(false);
-
-  if (res.status === 429) {
-    const after = Number(res.headers.get("retry-after")) || 0;
-    const detail = (await res.text()).slice(0, 200);
-    const waitMs = Math.min(Math.max(after * 1000, 2000), 8000);
-    await new Promise((r) => setTimeout(r, waitMs));
-    res = await send(true);
-    if (!res.ok) {
-      throw new Error(`${cfg.label} rate-limited (${res.status}) — free tier output tokens/min. ${detail}`);
-    }
-  }
+  if (res.status === 429) res = await recoverRateLimit(cfg, res, send);
 
   if (!res.ok) throw new Error(`${cfg.label} HTTP ${res.status}: ${(await res.text()).slice(0, 240)}`);
   const json = await res.json();
-  return json?.choices?.[0]?.message?.content ?? "";
+  // the free-tier window travels on every response; hand it back to the caller
+  return { text: json?.choices?.[0]?.message?.content ?? "", budget: windowFrom(res) };
 }
 
 async function callGemini(cfg, prompt, images) {
@@ -247,6 +329,7 @@ async function callGemini(cfg, prompt, images) {
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: upstreamSignal(),
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: prompt.system }] },
         contents: [{ role: "user", parts }],
@@ -256,7 +339,11 @@ async function callGemini(cfg, prompt, images) {
   );
   if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${(await res.text()).slice(0, 240)}`);
   const json = await res.json();
-  return json?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") ?? "";
+  return {
+    text: json?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") ?? "",
+    // Gemini does not publish a remaining-budget header we can rely on
+    budget: null,
+  };
 }
 
 /** Deterministic offline provider — proves the live plumbing without a key. */
@@ -516,9 +603,9 @@ async function handleRoute(headers, payload, env = process.env, res = null) {
   const started = Date.now();
 
   try {
-    const text =
+    const { text, budget } =
       cfg.shape === "mock"
-        ? callMock(prompt, useImages)
+        ? { text: callMock(prompt, useImages), budget: null }
         : cfg.shape === "gemini"
           ? await callGemini(cfg, prompt, useImages)
           : await callOpenAICompat(cfg, prompt, useImages);
@@ -542,15 +629,24 @@ async function handleRoute(headers, payload, env = process.env, res = null) {
         ms: Date.now() - started,
       },
       decision: parsedOut,
+      // lets the browser stop asking until the free-tier window refills
+      ...(budget ? { budget } : {}),
       ...(parsed.debug || env.VLM_DEBUG === "1"
         ? { raw: String(text).slice(0, 4000), prompt: prompt.userText.slice(0, 1200) }
         : {}),
     });
   } catch (err) {
-    const msg = String(err.message);
-    return respond(502, {
+    const msg = String(err && err.message);
+    const timedOut =
+      err &&
+      (err.name === "TimeoutError" || err.name === "AbortError" || /timeout|abort/i.test(msg));
+    const rateLimited =
+      (err && err.code === "rate-limited") || (!timedOut && /rate-limited|429/i.test(msg));
+    return respond(timedOut ? 504 : 502, {
       ok: false,
-      reason: /rate-limited|429/i.test(msg) ? "rate-limited" : "provider-error",
+      reason: timedOut ? "provider-timeout" : rateLimited ? "rate-limited" : "provider-error",
+      // the clock to resume on — the browser pauses exactly this long
+      ...(rateLimited && err && err.retryInSeconds ? { retryInSeconds: err.retryInSeconds } : {}),
       detail: msg.slice(0, 400),
     });
   }
