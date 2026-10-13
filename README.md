@@ -230,9 +230,17 @@ an analysis layer.
 The site is plain static files plus one optional serverless function, so it runs on **GitHub Pages**
 for free, or on **Vercel** for the full live-model experience.
 
-> **GitHub Pages serves files only — it cannot run the proxy.** There everything works *except* live
-> model inference: the chat runs on the **rule engine** and the badge reads `RULE-BASED`. Real model
-> inference needs a server, so use Vercel for that.
+> **Two shapes, one detector.** A script in `index.html` runs before first paint and picks the shape
+> from the hostname:
+>
+> | Host | What ships |
+> | --- | --- |
+> | `*.vercel.app` | **the workspace only** — hero, architecture, data, comparison, impact, references and footer are hidden; this host runs the proxy, so the page *is* the console |
+> | `*.github.io` | **the landing site only** — `#console` is hidden and every **Open console** link (header, nav and hero) redirects to <https://satquery-ai-nu.vercel.app/#console> |
+> | localhost / `file://` | the full site — what `npm run serve` and `npm run verify` exercise |
+>
+> GitHub Pages serves files only — it cannot run the proxy, which is why the workspace lives on
+> Vercel. If you deploy the full experience elsewhere, change that URL in `index.html`.
 
 ### GitHub Pages (static frontend, free) — live now
 

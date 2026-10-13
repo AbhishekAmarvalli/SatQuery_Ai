@@ -1306,9 +1306,19 @@
   });
   map.on("zoomend move", paintSwipe);
 
+  // GitHub Pages ships no serverless proxy, so index.html hides the console on
+  // *.github.io and publishes SATQUERY_CONSOLE_URL (the live Vercel deploy).
+  // There every "Open console" link becomes a redirect; everywhere else it
+  // keeps the behaviour below.
   // "Open console" should put the caret in the box, not just scroll there
+  const consoleRedirect = window.SATQUERY_CONSOLE_URL;
   document.querySelectorAll('a[href="#console"]').forEach((link) =>
-    link.addEventListener("click", () => {
+    consoleRedirect
+      ? link.addEventListener("click", (e) => {
+          e.preventDefault();
+          window.location.assign(consoleRedirect);
+        })
+      : link.addEventListener("click", () => {
       window.setTimeout(() => {
         const input = $("queryInput");
         if (input) input.focus({ preventScroll: true });

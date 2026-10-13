@@ -262,6 +262,31 @@ section { padding: clamp(44px, 6vw, 84px) clamp(16px, 4vw, 42px); }
   padding: clamp(44px, 6vw, 84px) clamp(16px, 4vw, 42px);
 }
 
+/* --------------------------------------------------------------------------
+   Deployment shapes (class set before first paint by the detector in
+   index.html):
+
+   html.deploy-pages — GitHub Pages: static files only, no serverless proxy,
+                       so the workspace is not shipped; the "Open console"
+                       links hand the reader over to the Vercel workspace.
+   html.deploy-app   — Vercel: this host IS the workspace, so only the
+                       workspace is shipped — hero, architecture, data,
+                       comparison, impact, references and footer are removed.
+
+   localhost / file:// get neither class: the full site, unchanged.
+   -------------------------------------------------------------------------- */
+html.deploy-pages #console { display: none; }
+
+html.deploy-app .hero,
+html.deploy-app #pipeline,
+html.deploy-app #data,
+html.deploy-app #compare,
+html.deploy-app #impact,
+html.deploy-app #refs,
+html.deploy-app .site-footer { display: none; }
+/* nav entries that point at the sections above would be dead links */
+html.deploy-app .main-nav a:not([href="#console"]) { display: none; }
+
 /* quick start — 3 steps, aimed at first-time / non-GIS users */
 .quickstart {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 26px;
