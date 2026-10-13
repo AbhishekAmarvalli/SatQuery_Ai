@@ -267,15 +267,30 @@ section { padding: clamp(44px, 6vw, 84px) clamp(16px, 4vw, 42px); }
    index.html):
 
    html.deploy-pages — GitHub Pages: static files only, no serverless proxy,
-                       so the workspace is not shipped; the "Open console"
-                       links hand the reader over to the Vercel workspace.
+                       so the workspace is not shipped — #console keeps only the
+                       CTA that opens it on Vercel, where the "Open console"
+                       links in the header, nav and hero also hand over.
    html.deploy-app   — Vercel: this host IS the workspace, so only the
                        workspace is shipped — hero, architecture, data,
                        comparison, impact, references and footer are removed.
 
    localhost / file:// get neither class: the full site, unchanged.
    -------------------------------------------------------------------------- */
-html.deploy-pages #console { display: none; }
+
+/* GitHub Pages: hide everything inside #console except the CTA card that opens
+   the workspace on Vercel (the card itself is hidden everywhere else). */
+.console-cta { display: none; }
+html.deploy-pages #console > *:not(.console-cta) { display: none; }
+html.deploy-pages .console-cta {
+  display: block;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: clamp(30px, 5vw, 54px) clamp(20px, 4vw, 46px);
+  text-align: center;
+}
+.console-cta .section-head { margin: 0 auto 4px; }
+.console-cta-btn { margin: 8px 0 2px; font-size: 1.02rem; padding: 14px 30px; }
+.console-cta-note { margin-top: 15px; font-size: 0.8rem; color: var(--ink-soft); }
 
 html.deploy-app .hero,
 html.deploy-app #pipeline,

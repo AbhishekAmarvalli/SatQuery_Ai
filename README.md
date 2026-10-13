@@ -236,7 +236,7 @@ for free, or on **Vercel** for the full live-model experience.
 > | Host | What ships |
 > | --- | --- |
 > | `*.vercel.app` | **the workspace only** — hero, architecture, data, comparison, impact, references and footer are hidden; this host runs the proxy, so the page *is* the console |
-> | `*.github.io` | **the landing site only** — `#console` is hidden and every **Open console** link (header, nav and hero) redirects to <https://satquery-ai-nu.vercel.app/#console> |
+> | `*.github.io` | **the landing site only** — the workspace inside `#console` is replaced by one **Open console** card pointing at <https://satquery-ai-nu.vercel.app/#console>, and the header / nav / hero console links redirect there too |
 > | localhost / `file://` | the full site — what `npm run serve` and `npm run verify` exercise |
 >
 > GitHub Pages serves files only — it cannot run the proxy, which is why the workspace lives on

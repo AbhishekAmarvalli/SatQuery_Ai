@@ -105,6 +105,22 @@
 
 <!-- ================= CONSOLE ================= -->
 <section id="console" class="console-section">
+  <!-- GitHub Pages only: the workspace runs on Vercel (serverless proxy + model),
+       so Pages shows the door instead of the room. css/styles.css reveals this
+       block on html.deploy-pages and hides everything else inside #console. -->
+  <div class="console-cta card">
+    <div class="section-head">
+      <span class="kicker">01 · Workspace</span>
+      <h2>Query console</h2>
+      <p>The live console — draw an <b>AOI</b>, ask in plain words, read the grounded map
+        answer — runs on our <b>Vercel</b> deployment, where the serverless proxy and the
+        vision-language model are available. This GitHub Pages site is static, so it ships
+        the rest of the site and hands the workspace over.</p>
+    </div>
+    <a class="btn btn-primary console-cta-btn" href="https://satquery-ai-nu.vercel.app/#console">Open console <span aria-hidden="true">→</span></a>
+    <p class="console-cta-note mono">satquery-ai-nu.vercel.app · live VLM · free public data · no key needed</p>
+  </div>
+
   <div class="section-head">
     <span class="kicker">01 · Workspace</span>
     <h2>Query console</h2>
